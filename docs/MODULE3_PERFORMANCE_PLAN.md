@@ -4,7 +4,7 @@
 
 This branch adds measurement only. `WRJ_ENABLE_PROFILING` defaults to `OFF`; when disabled, timer/count macros expand away and the profiler source is not linked. When enabled, timing uses `QueryPerformanceCounter` on Windows and `clock_gettime(CLOCK_MONOTONIC)` on Linux. Profiling writes a separate `profiling_module3.csv` in the case output directory after the normal result CSVs. No Module3/4 result schema changes are made.
 
-The M3 total timer covers `m3_run()` only, excluding handoff/IQ file reads, workspace allocation, Module4, and result writing. Allocation counters cover the 15 M3 workspace `calloc` calls and matching `free` calls. Stage percentages use M3 total as denominator; nested stages are inclusive and can overlap, so percentages are not additive. Unexecuted stages and operations are emitted as zero rows. No printf is added to hot loops.
+The M3 total timer covers `m3_run()` only, excluding handoff/IQ file reads, workspace allocation, Module4, and result writing. Allocation counters cover the 15 M3 workspace `calloc` calls and matching `free` calls. Stage percentages use M3 total as denominator; nested stages are inclusive and can overlap, so percentages are not additive. `OTHER` is a residual: total time minus the measured non-overlapping common stages and the selected top-level sync path, clamped to zero. Unexecuted stages and operations are emitted as zero rows. No printf is added to hot loops.
 
 ## Call paths
 

@@ -52,6 +52,37 @@ static double m3_perf_ticks_to_ms(uint64_t ticks)
 #endif
 }
 
+static double m3_perf_stage_time_ms(m3_perf_stage_t stage)
+{
+    return m3_perf_ticks_to_ms(m3_perf_stages[stage].ticks);
+}
+
+static double m3_perf_unclassified_time_ms(double total_ms)
+{
+    double accounted_ms = 0.0;
+    accounted_ms += m3_perf_stage_time_ms(M3_PERF_IQ_PREPROCESS);
+    accounted_ms += m3_perf_stage_time_ms(M3_PERF_CENTER_SHIFT);
+    accounted_ms += m3_perf_stage_time_ms(M3_PERF_PROFILE_SELECTION);
+    accounted_ms += m3_perf_stage_time_ms(M3_PERF_COARSE_CFO);
+    accounted_ms += m3_perf_stage_time_ms(M3_PERF_BANDLIMIT_FIR);
+    accounted_ms += m3_perf_stage_time_ms(M3_PERF_INTEGER_CFO);
+    accounted_ms += m3_perf_stage_time_ms(M3_PERF_SFO_ESTIMATION);
+
+    /* Add exactly one top-level synchronization path. Its detailed child
+     * stages are inclusive diagnostics and are deliberately not double-counted. */
+    if (m3_perf_stages[M3_PERF_DRONEID_SYNC].calls > 0U) {
+        accounted_ms += m3_perf_stage_time_ms(M3_PERF_DRONEID_SYNC);
+    } else if (m3_perf_stages[M3_PERF_BLE_SYNC].calls > 0U) {
+        accounted_ms += m3_perf_stage_time_ms(M3_PERF_BLE_SYNC);
+    } else if (m3_perf_stages[M3_PERF_WIDEBAND_SYNC].calls > 0U) {
+        accounted_ms += m3_perf_stage_time_ms(M3_PERF_WIDEBAND_SYNC);
+        accounted_ms += m3_perf_stage_time_ms(M3_PERF_FRAME_ALIGNMENT);
+    } else if (m3_perf_stages[M3_PERF_UNKNOWN_CONTROL_SYNC].calls > 0U) {
+        accounted_ms += m3_perf_stage_time_ms(M3_PERF_UNKNOWN_CONTROL_SYNC);
+    }
+    return WRJ_MAX(total_ms - accounted_ms, 0.0);
+}
+
 void m3_perf_reset(void)
 {
     memset(m3_perf_stages, 0, sizeof(m3_perf_stages));
@@ -96,6 +127,7 @@ wrj_status_t m3_perf_write_csv(const char *output_dir, const char *candidate_id)
     char path[1024];
     FILE *file;
     double total_ms;
+    double other_ms;
     uint32_t index;
     if (output_dir == NULL || candidate_id == NULL) {
         return WRJ_ERR_ARGUMENT;
@@ -108,12 +140,16 @@ wrj_status_t m3_perf_write_csv(const char *output_dir, const char *candidate_id)
         return WRJ_ERR_IO;
     }
     total_ms = m3_perf_ticks_to_ms(m3_perf_stages[M3_PERF_M3_TOTAL].ticks);
+    other_ms = m3_perf_unclassified_time_ms(total_ms);
     fprintf(file, "case,stage,calls,time_ms,percentage\n");
     for (index = 0U; index < (uint32_t)M3_PERF_STAGE_COUNT; ++index) {
-        const double time_ms = m3_perf_ticks_to_ms(m3_perf_stages[index].ticks);
+        const double time_ms = index == (uint32_t)M3_PERF_OTHER ? other_ms :
+            m3_perf_ticks_to_ms(m3_perf_stages[index].ticks);
         const double percentage = total_ms > 0.0 ? 100.0 * time_ms / total_ms : 0.0;
+        const uint64_t calls = index == (uint32_t)M3_PERF_OTHER && other_ms > 0.0 ? 1U :
+            m3_perf_stages[index].calls;
         fprintf(file, "%s,%s,%llu,%.6f,%.3f\n", candidate_id, m3_perf_stage_names[index],
-                (unsigned long long)m3_perf_stages[index].calls, time_ms, percentage);
+                (unsigned long long)calls, time_ms, percentage);
     }
     for (index = 0U; index < (uint32_t)M3_PERF_OP_COUNT; ++index) {
         fprintf(file, "%s,%s,%llu,0.000000,0.000\n", candidate_id,
