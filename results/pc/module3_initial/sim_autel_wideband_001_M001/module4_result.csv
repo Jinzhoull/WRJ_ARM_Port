@@ -1,0 +1,6 @@
+candidateId,status,protocolType,byteCount,byteRecoveryConfidence,bitErrorEstimate,decoderMethod,crcCandidateStatus,fieldCount
+sim_autel_wideband_001_M001,partial,AUTEL_SKYLINK_PROXY_WIDEBAND_V2,256,0.407735,0.592265,generic_differential_qpsk_hard,not_evaluated_stage1,3
+fieldOffset,fieldLength,semantic,confidence
+0,1,header_candidate,0.620456
+1,1,length_candidate,0.312729
+2,129,raw_payload,0.407735

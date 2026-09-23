@@ -1,0 +1,6 @@
+candidateId,status,protocolType,byteCount,byteRecoveryConfidence,bitErrorEstimate,decoderMethod,crcCandidateStatus,fieldCount
+sim_dji_wideband_018_M001,partial,DJI_OCUSYNC_PROXY_WIDEBAND_V2,256,0.377782,0.622218,generic_differential_qpsk_hard,not_evaluated_stage1,3
+fieldOffset,fieldLength,semantic,confidence
+0,1,header_candidate,0.501770
+1,1,length_candidate,0.363317
+2,60,raw_payload,0.377782

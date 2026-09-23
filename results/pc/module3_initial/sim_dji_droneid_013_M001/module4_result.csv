@@ -1,0 +1,3 @@
+candidateId,status,protocolType,byteCount,byteRecoveryConfidence,bitErrorEstimate,decoderMethod,crcCandidateStatus,fieldCount
+sim_dji_droneid_013_M001,unsupported_profile,DJI_DRONEID_PUBLIC_PHY_ENGINEERING_PAYLOAD_V2,0,0.000000,0.000000,,,0
+fieldOffset,fieldLength,semantic,confidence

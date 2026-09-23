@@ -1,0 +1,3 @@
+candidateId,fieldId,fieldOffset,fieldLength,fieldType,semantic,numericValue,stringValue,confidence
+sim_unknown_uav_005_M003,1,0,31,frame_extent_candidate,UNKNOWN,0.00000000,,0.450000
+sim_unknown_uav_005_M003,2,0,31,payload_candidate_unverified,UNKNOWN,0.00000000,,0.300000

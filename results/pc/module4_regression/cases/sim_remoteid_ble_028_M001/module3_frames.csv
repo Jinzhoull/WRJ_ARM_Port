@@ -1,0 +1,10 @@
+candidateId,frameIndex,frameStart0,frameStart1,frameConfidence
+sim_remoteid_ble_028_M001,1,6607,6608,0.338787
+sim_remoteid_ble_028_M001,2,23468,23469,0.784292
+sim_remoteid_ble_028_M001,3,46783,46784,0.730377
+sim_remoteid_ble_028_M001,4,67952,67953,0.680754
+sim_remoteid_ble_028_M001,5,91955,91956,0.749391
+sim_remoteid_ble_028_M001,6,117118,117119,0.681690
+sim_remoteid_ble_028_M001,7,143811,143812,0.342775
+sim_remoteid_ble_028_M001,8,163993,163994,0.375215
+sim_remoteid_ble_028_M001,9,181939,181940,0.348356

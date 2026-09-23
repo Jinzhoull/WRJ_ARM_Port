@@ -1,0 +1,3 @@
+candidateId,fieldId,fieldOffset,fieldLength,fieldType,semantic,numericValue,stringValue,confidence
+sim_autel_wideband_001_M001,1,0,96,frame_extent_candidate,UNKNOWN,0.00000000,,0.450000
+sim_autel_wideband_001_M001,2,0,96,payload_candidate_unverified,UNKNOWN,0.00000000,,0.300000

@@ -1,0 +1,2 @@
+candidateId,status,protocolType,byteSource,byteRecoveryStatus,parseStatus,parseComplete,byteCount,byteRecoveryConfidence,bitErrorEstimate,decoderMethod,crcCandidateStatus,crcChecked,crcPassed,packetCount,crcValidCount,messageTypesMask,uasId,operatorId,latitudeDeg,longitudeDeg,altitudeM,speedMps,headingDeg,fieldCount,diagnostics
+sim_remoteid_ble_028_M001,crc_failed,RemoteID_BLE_GFSK,NONE,byte_recovery_failed,not_parsed,0,0,0.000000,0.500000,,no_valid_crc24_pdu,0,0,0,0,0,,,nan,nan,nan,nan,nan,0,upstream_crc_candidate_missing

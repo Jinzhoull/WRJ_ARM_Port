@@ -1,0 +1,51 @@
+# Local secrets and credentials
+.env
+.env.*
+!.env.example
+credentials*
+**/id_rsa
+**/id_ed25519
+*.pem
+*.key
+
+# CMake build trees (scripts recreate these directories)
+/build-pc/**
+/build-arm/**
+/build/
+/build-*/
+/cmake-build-*/
+
+# Temporary files and logs
+*.tmp
+*.bak
+*.old
+*.log
+*~
+
+# Python cache
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+
+# CMake-generated metadata and native build products
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+CTestTestfile.cmake
+Makefile
+Testing/
+*.o
+*.obj
+*.a
+*.so
+*.dll
+*.exe
+*.elf
+*.out
+
+# Editors and operating systems
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db

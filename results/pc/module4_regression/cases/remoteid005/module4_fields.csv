@@ -1,0 +1,8 @@
+candidateId,fieldId,fieldOffset,fieldLength,fieldType,semantic,numericValue,stringValue,confidence
+sim_remoteid_ble_005_M001,1,16,20,basic_id,UAS_ID,0.00000000,UAS000185,0.601811
+sim_remoteid_ble_005_M001,2,19,4,location,LATITUDE,31.22602430,,0.587137
+sim_remoteid_ble_005_M001,3,23,4,location,LONGITUDE,121.46824690,,0.587137
+sim_remoteid_ble_005_M001,4,29,2,location,ALTITUDE,131.00000000,,0.587137
+sim_remoteid_ble_005_M001,5,16,2,location,HEADING,117.00000000,,0.587137
+sim_remoteid_ble_005_M001,6,17,1,location,SPEED,2.25000000,,0.587137
+sim_remoteid_ble_005_M001,7,16,20,operator_id,OPERATOR_ID,0.00000000,OP01185,0.596097

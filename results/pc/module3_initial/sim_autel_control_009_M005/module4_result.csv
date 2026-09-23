@@ -1,0 +1,3 @@
+candidateId,status,protocolType,byteCount,byteRecoveryConfidence,bitErrorEstimate,decoderMethod,crcCandidateStatus,fieldCount
+sim_autel_control_009_M005,unsupported_profile,AUTEL_SKYLINK_PROXY_CONTROL_V2,0,0.000000,0.000000,,,0
+fieldOffset,fieldLength,semantic,confidence
