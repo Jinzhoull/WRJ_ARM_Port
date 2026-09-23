@@ -1,4 +1,5 @@
 #include "m3_module3.h"
+#include "common/perf_timer.h"
 
 static int m3_is_power_of_two(uint32_t value)
 {
@@ -25,6 +26,7 @@ wrj_status_t m3_fft_forward_radix2(float *re, float *im, uint32_t length)
     if (re == NULL || im == NULL || !m3_is_power_of_two(length)) {
         return WRJ_ERR_ARGUMENT;
     }
+    M3_PERF_COUNT(M3_PERF_OP_FFT_CALLS, 1U);
     while ((1U << bits) < length) {
         ++bits;
     }

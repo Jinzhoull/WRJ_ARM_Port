@@ -1,6 +1,7 @@
 #include "m3_module3.h"
 #include "m4_module4.h"
 #include "wrj_io.h"
+#include "common/perf_timer.h"
 
 #include <stdlib.h>
 
@@ -49,6 +50,9 @@ int main(int argc, char **argv)
         fprintf(stderr, "handoff read failed: %d\n", status);
         return 1;
     }
+#ifdef WRJ_ENABLE_PROFILING
+    m3_perf_reset();
+#endif
     m3_default_config(&m3_config);
     status = m3_workspace_init(&workspace, &m3_config);
     if (status != WRJ_OK) {
@@ -107,5 +111,11 @@ int main(int argc, char **argv)
                m4_result.altitude_m, m4_result.speed_mps, m4_result.heading_deg);
     }
     m3_workspace_release(&workspace);
+#ifdef WRJ_ENABLE_PROFILING
+    status = m3_perf_write_csv(output_dir, candidate.candidate_id);
+    if (status != WRJ_OK) {
+        fprintf(stderr, "Module3 profiling CSV write failed: %d\n", status);
+    }
+#endif
     return 0;
 }

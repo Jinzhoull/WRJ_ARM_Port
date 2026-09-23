@@ -1,4 +1,5 @@
 #include "m3_module3.h"
+#include "common/perf_timer.h"
 
 #include <stdlib.h>
 
@@ -86,10 +87,14 @@ void m3_cfo_compensate(const wrj_cf32_t *input, wrj_cf32_t *output, uint32_t cou
 {
     uint32_t index;
     const double phase_step = -2.0 * WRJ_PI * (double)correction_hz / (double)sample_rate_hz;
+    M3_PERF_TIMER(timer);
 
     if (input == NULL || output == NULL || sample_rate_hz <= 0.0f) {
         return;
     }
+    M3_PERF_COUNT(M3_PERF_OP_COMPLEX_ROTATION_CALLS, 1U);
+    M3_PERF_COUNT(M3_PERF_OP_COMPLEX_ROTATION_SAMPLES, count);
+    M3_PERF_START(timer);
     for (index = 0U; index < count; ++index) {
         const double angle = phase_step * (double)index;
         const float cr = (float)cos(angle);
@@ -99,6 +104,7 @@ void m3_cfo_compensate(const wrj_cf32_t *input, wrj_cf32_t *output, uint32_t cou
         output[index].re = re * cr - im * ci;
         output[index].im = re * ci + im * cr;
     }
+    M3_PERF_STOP(M3_PERF_CFO_COMPENSATION, timer);
 }
 
 wrj_status_t m3_bandlimit_fir(wrj_cf32_t *iq, uint32_t count, float sample_rate_hz,
@@ -434,6 +440,8 @@ wrj_status_t m3_integer_cfo_search(const wrj_cf32_t *iq, uint32_t count,
     if (iq == NULL || count < 64U || sample_rate_hz <= 0.0f || subcarrier_spacing_hz <= 0.0f) {
         return WRJ_ERR_ARGUMENT;
     }
+    M3_PERF_COUNT(M3_PERF_OP_CFO_CANDIDATES, 7U);
+    M3_PERF_COUNT(M3_PERF_OP_INTEGER_CFO_CANDIDATES, 7U);
     for (candidate = -3; candidate <= 3; ++candidate) {
         const double rotation = -2.0 * WRJ_PI * (double)candidate *
             (double)subcarrier_spacing_hz / (double)sample_rate_hz;

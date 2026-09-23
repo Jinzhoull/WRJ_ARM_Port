@@ -1,4 +1,5 @@
 #include "m3_module3.h"
+#include "common/perf_timer.h"
 
 #include <stdlib.h>
 
@@ -135,6 +136,9 @@ wrj_status_t m3_select_wideband_numerology(const wrj_cf32_t *iq, uint32_t count,
             }
         }
         metric_count = take - nf - cp + 1U;
+        M3_PERF_COUNT(M3_PERF_OP_CORRELATION_CALLS, 1U);
+        M3_PERF_COUNT(M3_PERF_OP_CORRELATION_EVALUATIONS, metric_count);
+        M3_PERF_COUNT(M3_PERF_OP_FRAME_CANDIDATES, metric_count);
         {
             uint32_t j;
             double sr = 0.0;

@@ -6,10 +6,15 @@ set(CMAKE_C_STANDARD_REQUIRED ON)
 set(CMAKE_C_EXTENSIONS OFF)
 
 option(WRJ_ENABLE_NEON "Enable ARM NEON-specific code paths when available" OFF)
+option(WRJ_ENABLE_PROFILING "Enable Module3 stage timing and operation counters" OFF)
 
 add_library(wrj_common STATIC
     src/wrj_io.c)
 target_include_directories(wrj_common PUBLIC include)
+if(WRJ_ENABLE_PROFILING)
+    target_sources(wrj_common PRIVATE src/common/perf_timer.c)
+    target_compile_definitions(wrj_common PUBLIC WRJ_ENABLE_PROFILING=1)
+endif()
 
 add_library(wrj_module3 STATIC
     src/module3/module3.c
