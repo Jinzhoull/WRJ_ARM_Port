@@ -65,6 +65,8 @@ IQ_NAME=data/sim_dji_droneid_013_M001.cf32 \
 
 The scripts use the `analog-board` SSH alias and `tools/board_config.sh`; credentials and private keys stay in the user's SSH configuration and are never copied into this repository. Board results use timestamped directories under `results/arm/`.
 
+The ARM shell scripts have executable Git modes and can be run directly with `./tools/build_arm.sh`, `./tools/deploy_board.sh`, and `./tools/run_board_test.sh` (no `bash tools/...` prefix is needed). Each board-test log starts with commit, branch, build type, optimization, target, link mode, board, case, timestamp, and the Ubuntu-built binary's SHA-256 when the binary and `sha256sum` are available. Effective build type, optimization, and link mode are read from the ARM CMake cache when present; centralized deployment defaults are used otherwise.
+
 The current Ubuntu checkout at `~/WRJ_ARM_Port` may contain files or local edits unique to that machine. Check and back up anything unique before replacing it with a clean clone. Never delete or overwrite it remotely as part of Windows development.
 
 ## Initial private GitHub setup
