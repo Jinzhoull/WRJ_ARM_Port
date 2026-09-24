@@ -430,7 +430,13 @@ wrj_status_t m3_integer_cfo_search(const wrj_cf32_t *iq, uint32_t count,
                                    m3_workspace_t *workspace, int32_t *selected_index,
                                    float *selected_offset_hz)
 {
+    enum { CANDIDATE_COUNT = 7 };
     int32_t candidate;
+    double rotation[CANDIDATE_COUNT];
+    double sum_re[CANDIDATE_COUNT] = {0.0};
+    double sum_im[CANDIDATE_COUNT] = {0.0};
+    double weight = 0.0;
+    uint32_t index;
     float baseline_score = 0.0f;
     float best_score = -1.0f;
     int32_t best_index = 0;
@@ -444,28 +450,31 @@ wrj_status_t m3_integer_cfo_search(const wrj_cf32_t *iq, uint32_t count,
     M3_PERF_COUNT(M3_PERF_OP_CFO_CANDIDATES, 7U);
     M3_PERF_COUNT(M3_PERF_OP_INTEGER_CFO_CANDIDATES, 7U);
     for (candidate = -3; candidate <= 3; ++candidate) {
-        const double rotation = -2.0 * WRJ_PI * (double)candidate *
+        rotation[candidate + 3] = -2.0 * WRJ_PI * (double)candidate *
             (double)subcarrier_spacing_hz / (double)sample_rate_hz;
-        double sum_re = 0.0;
-        double sum_im = 0.0;
-        double weight = 0.0;
-        uint32_t index;
-        for (index = 0U; index + 4U < count; index += 4U) {
-            const wrj_cf32_t a = iq[index];
-            const wrj_cf32_t b = iq[index + 4U];
-            const double magnitude_a = sqrt((double)a.re * a.re + (double)a.im * a.im) + 1.0e-12;
-            const double magnitude_b = sqrt((double)b.re * b.re + (double)b.im * b.im) + 1.0e-12;
-            const double phase_a = 4.0 * atan2((double)a.im, (double)a.re);
-            const double phase_b = 4.0 * atan2((double)b.im, (double)b.re);
-            const double delta = phase_b - phase_a + 16.0 * rotation;
-            const double w = fmin(magnitude_a, magnitude_b);
-            sum_re += w * cos(delta);
-            sum_im += w * sin(delta);
-            weight += w;
+    }
+    for (index = 0U; index + 4U < count; index += 4U) {
+        const wrj_cf32_t a = iq[index];
+        const wrj_cf32_t b = iq[index + 4U];
+        const double magnitude_a = sqrt((double)a.re * a.re + (double)a.im * a.im) + 1.0e-12;
+        const double magnitude_b = sqrt((double)b.re * b.re + (double)b.im * b.im) + 1.0e-12;
+        const double phase_a = 4.0 * atan2((double)a.im, (double)a.re);
+        const double phase_b = 4.0 * atan2((double)b.im, (double)b.re);
+        const double w = fmin(magnitude_a, magnitude_b);
+        for (candidate = -3; candidate <= 3; ++candidate) {
+            const uint32_t slot = (uint32_t)(candidate + 3);
+            const double delta = phase_b - phase_a + 16.0 * rotation[slot];
+            sum_re[slot] += w * cos(delta);
+            sum_im[slot] += w * sin(delta);
         }
+        weight += w;
+    }
+    for (candidate = -3; candidate <= 3; ++candidate) {
+        const uint32_t slot = (uint32_t)(candidate + 3);
         if (weight > 0.0) {
-            const float coherence = (float)(sqrt(sum_re * sum_re + sum_im * sum_im) / weight);
-            const float residual = (float)fabs(atan2(sum_im, sum_re));
+            const float coherence = (float)(sqrt(sum_re[slot] * sum_re[slot] +
+                                                  sum_im[slot] * sum_im[slot]) / weight);
+            const float residual = (float)fabs(atan2(sum_im[slot], sum_re[slot]));
             const float score = coherence * expf(-residual * residual / 0.25f);
             if (candidate == 0) {
                 baseline_score = score;
