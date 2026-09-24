@@ -188,6 +188,13 @@ wrj_status_t m3_estimate_spectral_center(const wrj_cf32_t *iq, uint32_t count,
     if (block_count == 0U) {
         return WRJ_ERR_DATA;
     }
+    /* spectrum_weight has spectrum_length elements and is not used for
+     * spectral weights until after all FFT blocks have been processed. */
+    for (bin = 0U; bin < fft_size; ++bin) {
+        workspace->spectrum_weight[bin] = 0.5f - 0.5f *
+            cosf(2.0f * (float)WRJ_PI * (float)bin /
+                 (float)WRJ_MAX(1U, fft_size - 1U));
+    }
     for (block = 0U; block < block_count; ++block) {
         const uint32_t block_ordinal = available_blocks > block_count && block_count > 1U ?
             (uint32_t)llround(1.0 + (double)block * (double)(available_blocks - 1U) /
@@ -196,8 +203,7 @@ wrj_status_t m3_estimate_spectral_center(const wrj_cf32_t *iq, uint32_t count,
         double block_energy = 0.0;
         for (bin = 0U; bin < fft_size; ++bin) {
             const uint32_t sample = start + bin;
-            const float window = 0.5f - 0.5f * cosf(2.0f * (float)WRJ_PI * (float)bin /
-                                                     (float)WRJ_MAX(1U, fft_size - 1U));
+            const float window = workspace->spectrum_weight[bin];
             workspace->fft_re[bin] = (sample < count) ? iq[sample].re * window : 0.0f;
             workspace->fft_im[bin] = (sample < count) ? iq[sample].im * window : 0.0f;
             block_energy += (double)workspace->fft_re[bin] * workspace->fft_re[bin] +
