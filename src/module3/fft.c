@@ -45,13 +45,15 @@ wrj_status_t m3_fft_forward_radix2(float *re, float *im, uint32_t length)
     for (span = 2U; span <= length; span <<= 1U) {
         const uint32_t half = span >> 1U;
         const float step = -2.0f * (float)WRJ_PI / (float)span;
-        uint32_t base;
-        for (base = 0U; base < length; base += span) {
-            uint32_t offset;
-            for (offset = 0U; offset < half; ++offset) {
-                const float angle = step * (float)offset;
-                const float tw_re = cosf(angle);
-                const float tw_im = sinf(angle);
+        uint32_t offset;
+        /* Within one stage, each butterfly pair belongs to one disjoint span
+         * block and one offset, so changing their traversal order is safe. */
+        for (offset = 0U; offset < half; ++offset) {
+            const float angle = step * (float)offset;
+            const float tw_re = cosf(angle);
+            const float tw_im = sinf(angle);
+            uint32_t base;
+            for (base = 0U; base < length; base += span) {
                 const uint32_t upper = base + offset;
                 const uint32_t lower = upper + half;
                 const float vr = re[lower] * tw_re - im[lower] * tw_im;
