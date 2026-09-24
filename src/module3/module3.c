@@ -1,4 +1,5 @@
 #include "m3_module3.h"
+#include "common/perf_timer.h"
 #include "wrj_io.h"
 
 #include <stdlib.h>
@@ -102,6 +103,7 @@ wrj_status_t m3_workspace_init(m3_workspace_t *workspace, const m3_config_t *con
      * at most roughly N/2 candidates can exist. */
     workspace->peak_capacity = config->max_samples / 2U + 1U;
     workspace->selected_peak_capacity = 8192U;
+    M3_PERF_COUNT(M3_PERF_OP_CALLOC_CALLS, 16U);
     workspace->baseband = calloc(samples, sizeof(*workspace->baseband));
     workspace->compensated = calloc(samples, sizeof(*workspace->compensated));
     workspace->fft_re = calloc(fft_size, sizeof(*workspace->fft_re));
@@ -109,6 +111,7 @@ wrj_status_t m3_workspace_init(m3_workspace_t *workspace, const m3_config_t *con
     workspace->power = calloc(fft_size, sizeof(*workspace->power));
     workspace->metric = calloc(samples, sizeof(*workspace->metric));
     workspace->scratch = calloc(samples, sizeof(*workspace->scratch));
+    workspace->ble_phase_delta = calloc(samples, sizeof(*workspace->ble_phase_delta));
     workspace->peak_candidates = calloc(workspace->peak_capacity, sizeof(*workspace->peak_candidates));
     workspace->peak_selected = calloc(workspace->selected_peak_capacity, sizeof(*workspace->peak_selected));
     workspace->flags = calloc(samples, sizeof(*workspace->flags));
@@ -122,6 +125,7 @@ wrj_status_t m3_workspace_init(m3_workspace_t *workspace, const m3_config_t *con
     if (workspace->baseband == NULL || workspace->compensated == NULL ||
         workspace->fft_re == NULL || workspace->fft_im == NULL ||
         workspace->power == NULL || workspace->metric == NULL || workspace->scratch == NULL ||
+        workspace->ble_phase_delta == NULL ||
         workspace->peak_candidates == NULL || workspace->peak_selected == NULL || workspace->flags == NULL ||
         workspace->spectrum_block_power == NULL || workspace->spectrum_block_energy == NULL ||
         workspace->spectrum_smooth == NULL || workspace->spectrum_weight == NULL ||
@@ -137,6 +141,7 @@ void m3_workspace_release(m3_workspace_t *workspace)
     if (workspace == NULL) {
         return;
     }
+    M3_PERF_COUNT(M3_PERF_OP_FREE_CALLS, 16U);
     free(workspace->baseband);
     free(workspace->compensated);
     free(workspace->fft_re);
@@ -144,6 +149,7 @@ void m3_workspace_release(m3_workspace_t *workspace)
     free(workspace->power);
     free(workspace->metric);
     free(workspace->scratch);
+    free(workspace->ble_phase_delta);
     free(workspace->peak_candidates);
     free(workspace->peak_selected);
     free(workspace->flags);
@@ -162,7 +168,7 @@ size_t m3_workspace_bytes(const m3_workspace_t *workspace)
     }
     return (size_t)workspace->max_samples *
         (sizeof(*workspace->baseband) + sizeof(*workspace->compensated) +
-         2U * sizeof(float) + sizeof(uint8_t)) +
+         2U * sizeof(float) + sizeof(*workspace->ble_phase_delta) + sizeof(uint8_t)) +
         (size_t)workspace->peak_capacity * sizeof(m3_peak_t) +
         (size_t)workspace->selected_peak_capacity * sizeof(m3_peak_t) +
         (size_t)workspace->fft_size * 3U * sizeof(float) +
@@ -253,12 +259,18 @@ wrj_status_t m3_run(const wrj_candidate_t *candidate, const wrj_cf32_t *iq,
     float integer_cfo_offset_hz = 0.0f;
     m3_result_t sync_result;
     wrj_status_t status;
+    M3_PERF_TIMER(total_timer);
+    M3_PERF_TIMER(stage_timer);
+    M3_PERF_TIMER(spectrum_timer);
 
     if (candidate == NULL || iq == NULL || config == NULL || workspace == NULL || result == NULL ||
         count == 0U || count > workspace->max_samples) {
         return WRJ_ERR_ARGUMENT;
     }
+    M3_PERF_START(total_timer);
+    M3_PERF_START(stage_timer);
     profile = m3_select_profile(candidate, &nfft, &cp_samples);
+    M3_PERF_STOP(M3_PERF_PROFILE_SELECTION, stage_timer);
     m3_init_result(result, profile);
     snprintf(result->profile_name, sizeof(result->profile_name), "%s", wrj_profile_name(profile));
     snprintf(result->recommended_profile, sizeof(result->recommended_profile), "%s",
@@ -268,47 +280,65 @@ wrj_status_t m3_run(const wrj_candidate_t *candidate, const wrj_cf32_t *iq,
     if (iq != workspace->compensated) {
         memcpy(workspace->compensated, iq, sizeof(*iq) * (size_t)count);
     }
+    M3_PERF_START(stage_timer);
     status = m3_preprocess_iq(workspace->compensated, count, workspace);
+    M3_PERF_STOP(M3_PERF_IQ_PREPROCESS, stage_timer);
     if (status != WRJ_OK) {
         m3_set_status(result, "preprocess_failed");
+        M3_PERF_STOP(M3_PERF_M3_TOTAL, total_timer);
         return status;
     }
 
     /* Module1/2 supplies the selected candidate centre as a normal front-end
      * acquisition hint.  It moves the extracted channel close to baseband;
      * the reported Module3 CFO below remains the residual correction only. */
+    M3_PERF_START(stage_timer);
     m3_cfo_compensate(workspace->compensated, workspace->baseband, count, candidate->sample_rate_hz,
                       candidate->candidate_center_offset_hz);
     memcpy(workspace->compensated, workspace->baseband,
            sizeof(*workspace->compensated) * (size_t)count);
+    M3_PERF_STOP(M3_PERF_CENTER_SHIFT, stage_timer);
     if (profile == WRJ_PROFILE_DJI_WIDEBAND_CP || profile == WRJ_PROFILE_AUTEL_WIDEBAND_CP) {
+        M3_PERF_START(stage_timer);
         status = m3_select_wideband_numerology(workspace->compensated, count,
                                                 candidate->sample_rate_hz, workspace,
                                                 &nfft, &cp_samples);
+        M3_PERF_STOP(M3_PERF_PROFILE_SELECTION, stage_timer);
         if (status != WRJ_OK) {
             m3_set_status(result, "numerology_selection_failed");
+            M3_PERF_STOP(M3_PERF_M3_TOTAL, total_timer);
             return status;
         }
     }
+    M3_PERF_START(stage_timer);
+    M3_PERF_START(spectrum_timer);
     status = m3_estimate_spectral_center(workspace->compensated, count, candidate->sample_rate_hz,
                                          candidate->bandwidth_hz, workspace, &spectral);
+    M3_PERF_STOP(M3_PERF_SPECTRUM_ANALYSIS, spectrum_timer);
     if (status != WRJ_OK) {
         m3_set_status(result, "spectral_estimation_failed");
+        M3_PERF_STOP(M3_PERF_COARSE_CFO, stage_timer);
+        M3_PERF_STOP(M3_PERF_M3_TOTAL, total_timer);
         return status;
     }
     m3_cfo_compensate(workspace->compensated, workspace->compensated, count,
                       candidate->sample_rate_hz, spectral);
+    M3_PERF_STOP(M3_PERF_COARSE_CFO, stage_timer);
     result->spectral_correction_hz = spectral;
     memcpy(workspace->baseband, workspace->compensated,
            sizeof(*workspace->baseband) * (size_t)count);
+    M3_PERF_START(stage_timer);
     status = m3_bandlimit_fir(workspace->compensated, count, candidate->sample_rate_hz,
                               candidate->bandwidth_hz, workspace);
+    M3_PERF_STOP(M3_PERF_BANDLIMIT_FIR, stage_timer);
     if (status != WRJ_OK) {
         m3_set_status(result, "bandlimit_failed");
+        M3_PERF_STOP(M3_PERF_M3_TOTAL, total_timer);
         return status;
     }
 
     if (config->enable_integer_cfo_search != 0U && nfft > 0U) {
+        M3_PERF_START(stage_timer);
         (void)m3_integer_cfo_search(workspace->compensated, count, candidate->sample_rate_hz,
                                     candidate->sample_rate_hz / (float)nfft, workspace,
                                     &integer_cfo_index, &integer_cfo_offset_hz);
@@ -316,6 +346,7 @@ wrj_status_t m3_run(const wrj_candidate_t *candidate, const wrj_cf32_t *iq,
             m3_cfo_compensate(workspace->compensated, workspace->compensated, count,
                               candidate->sample_rate_hz, integer_cfo_offset_hz);
         }
+        M3_PERF_STOP(M3_PERF_INTEGER_CFO, stage_timer);
     }
     if (profile != WRJ_PROFILE_DJI_WIDEBAND_CP && profile != WRJ_PROFILE_AUTEL_WIDEBAND_CP &&
         profile != WRJ_PROFILE_AUTEL_CONTROL_CP) {
@@ -343,6 +374,7 @@ wrj_status_t m3_run(const wrj_candidate_t *candidate, const wrj_cf32_t *iq,
                     float best_offset_hz = 0.0f;
                     float current_offset_hz = 0.0f;
                     uint32_t residual_index;
+                    M3_PERF_START(stage_timer);
                     for (residual_index = 0U; residual_index < 9U; ++residual_index) {
                         m3_result_t trial;
                         const float target_offset_hz = residual_grid_hz[residual_index];
@@ -362,6 +394,9 @@ wrj_status_t m3_run(const wrj_candidate_t *candidate, const wrj_cf32_t *iq,
                             }
                         }
                     }
+                    M3_PERF_COUNT(M3_PERF_OP_BLE_RESIDUAL_CFO_CANDIDATES, 9U);
+                    M3_PERF_COUNT(M3_PERF_OP_CFO_CANDIDATES, 9U);
+                    M3_PERF_STOP(M3_PERF_BLE_RESIDUAL_CFO, stage_timer);
                     m3_cfo_compensate(workspace->compensated, workspace->compensated, count,
                                       candidate->sample_rate_hz,
                                       best_offset_hz - current_offset_hz);
@@ -373,14 +408,18 @@ wrj_status_t m3_run(const wrj_candidate_t *candidate, const wrj_cf32_t *iq,
                 }
                 break;
             case WRJ_PROFILE_CONTROL_BURST:
+                M3_PERF_START(stage_timer);
                 status = m3_burst_synchronize(workspace->compensated, count,
                                               candidate->sample_rate_hz,
                                               config->max_frames, workspace, &primary);
+                M3_PERF_STOP(M3_PERF_UNKNOWN_CONTROL_SYNC, stage_timer);
                 break;
             default:
+                M3_PERF_START(stage_timer);
                 status = m3_blind_synchronize(workspace->compensated, count,
                                               candidate->sample_rate_hz,
                                               config->max_frames, workspace, &primary);
+                M3_PERF_STOP(M3_PERF_UNKNOWN_CONTROL_SYNC, stage_timer);
                 break;
         }
         if (status != WRJ_OK) {
@@ -390,12 +429,14 @@ wrj_status_t m3_run(const wrj_candidate_t *candidate, const wrj_cf32_t *iq,
             0.28f * wrj_clip01(primary.peak_metric);
         if (primary.sync_confidence < 0.88f && profile != WRJ_PROFILE_UNKNOWN) {
             result->profiles_tried = 2U;
+            M3_PERF_START(stage_timer);
             if (m3_blind_synchronize(workspace->compensated, count,
                                      candidate->sample_rate_hz, config->max_frames,
                                      workspace, &alternate) == WRJ_OK) {
                 alternate_score = 0.72f * alternate.sync_confidence +
                     0.28f * wrj_clip01(alternate.peak_metric);
             }
+            M3_PERF_STOP(M3_PERF_UNKNOWN_CONTROL_SYNC, stage_timer);
         }
         if (alternate_score >= primary_score + 0.025f) {
             primary = alternate;
@@ -425,22 +466,29 @@ wrj_status_t m3_run(const wrj_candidate_t *candidate, const wrj_cf32_t *iq,
         result->selected_cfo_score = 0.72f * primary.sync_confidence +
             0.28f * wrj_clip01(primary.peak_metric);
         result->estimated_cfo_hz = spectral + integer_cfo_offset_hz + result->fractional_cfo_hz;
+        M3_PERF_START(stage_timer);
         m3_estimate_sfo(workspace->compensated, count, nfft, cp_samples, result);
+        M3_PERF_STOP(M3_PERF_SFO_ESTIMATION, stage_timer);
         if (result->sync_confidence >= config->sync_accept_threshold) {
             m3_set_status(result, "ok");
+            M3_PERF_STOP(M3_PERF_M3_TOTAL, total_timer);
             return WRJ_OK;
         }
         m3_set_status(result, "sync_below_threshold");
+        M3_PERF_STOP(M3_PERF_M3_TOTAL, total_timer);
         return status == WRJ_OK ? WRJ_OK : status;
     }
 
     memset(&sync_result, 0, sizeof(sync_result));
+    M3_PERF_START(stage_timer);
     status = m3_cp_synchronize(workspace->compensated, count, nfft, cp_samples,
                                config->max_frames, workspace, &sync_result);
+    M3_PERF_STOP(M3_PERF_WIDEBAND_SYNC, stage_timer);
     if (status != WRJ_OK) {
         *result = sync_result;
         result->profile = profile;
         snprintf(result->profile_name, sizeof(result->profile_name), "%s", wrj_profile_name(profile));
+        M3_PERF_STOP(M3_PERF_M3_TOTAL, total_timer);
         return status;
     }
     /* CP phase identifies fractional CFO modulo subcarrier spacing.  The
@@ -451,12 +499,15 @@ wrj_status_t m3_run(const wrj_candidate_t *candidate, const wrj_cf32_t *iq,
     m3_cfo_compensate(workspace->compensated, workspace->compensated, count,
                       candidate->sample_rate_hz, fine_cfo_hz);
     memset(&sync_result, 0, sizeof(sync_result));
+    M3_PERF_START(stage_timer);
     status = m3_cp_synchronize(workspace->compensated, count, nfft, cp_samples,
                                config->max_frames, workspace, &sync_result);
+    M3_PERF_STOP(M3_PERF_WIDEBAND_SYNC, stage_timer);
     if (status != WRJ_OK) {
         *result = sync_result;
         result->profile = profile;
         snprintf(result->profile_name, sizeof(result->profile_name), "%s", wrj_profile_name(profile));
+        M3_PERF_STOP(M3_PERF_M3_TOTAL, total_timer);
         return status;
     }
     *result = sync_result;
@@ -476,12 +527,17 @@ wrj_status_t m3_run(const wrj_candidate_t *candidate, const wrj_cf32_t *iq,
              wrj_profile_name(profile));
     snprintf(result->attempted_profiles, sizeof(result->attempted_profiles), "%s",
              wrj_profile_name(profile));
+    M3_PERF_START(stage_timer);
     m3_refine_cp_starts(workspace->baseband, count, nfft, cp_samples, result);
+    M3_PERF_STOP(M3_PERF_FRAME_ALIGNMENT, stage_timer);
+    M3_PERF_START(stage_timer);
     m3_estimate_sfo(workspace->compensated, count, nfft, cp_samples, result);
+    M3_PERF_STOP(M3_PERF_SFO_ESTIMATION, stage_timer);
     if (result->sync_confidence >= config->sync_accept_threshold) {
         m3_set_status(result, "ok");
     } else {
         m3_set_status(result, "sync_below_threshold");
     }
+    M3_PERF_STOP(M3_PERF_M3_TOTAL, total_timer);
     return WRJ_OK;
 }

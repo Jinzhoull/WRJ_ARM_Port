@@ -1,4 +1,5 @@
 #include "m3_module3.h"
+#include "common/perf_timer.h"
 
 #include <stdlib.h>
 
@@ -86,10 +87,14 @@ void m3_cfo_compensate(const wrj_cf32_t *input, wrj_cf32_t *output, uint32_t cou
 {
     uint32_t index;
     const double phase_step = -2.0 * WRJ_PI * (double)correction_hz / (double)sample_rate_hz;
+    M3_PERF_TIMER(timer);
 
     if (input == NULL || output == NULL || sample_rate_hz <= 0.0f) {
         return;
     }
+    M3_PERF_COUNT(M3_PERF_OP_COMPLEX_ROTATION_CALLS, 1U);
+    M3_PERF_COUNT(M3_PERF_OP_COMPLEX_ROTATION_SAMPLES, count);
+    M3_PERF_START(timer);
     for (index = 0U; index < count; ++index) {
         const double angle = phase_step * (double)index;
         const float cr = (float)cos(angle);
@@ -99,6 +104,7 @@ void m3_cfo_compensate(const wrj_cf32_t *input, wrj_cf32_t *output, uint32_t cou
         output[index].re = re * cr - im * ci;
         output[index].im = re * ci + im * cr;
     }
+    M3_PERF_STOP(M3_PERF_CFO_COMPENSATION, timer);
 }
 
 wrj_status_t m3_bandlimit_fir(wrj_cf32_t *iq, uint32_t count, float sample_rate_hz,
@@ -131,15 +137,16 @@ wrj_status_t m3_bandlimit_fir(wrj_cf32_t *iq, uint32_t count, float sample_rate_
     }
     for (index = 0U; index < count; ++index) {
         int32_t tap;
+        const int32_t first_tap = index < HALF ? -(int32_t)index : -HALF;
+        const int32_t last_tap = count - 1U - index < HALF ?
+            (int32_t)(count - 1U - index) : HALF;
         double re = 0.0;
         double im = 0.0;
-        for (tap = -HALF; tap <= HALF; ++tap) {
+        for (tap = first_tap; tap <= last_tap; ++tap) {
             const int64_t source = (int64_t)index + tap;
-            if (source >= 0 && source < (int64_t)count) {
-                const float coefficient = taps[tap + HALF];
-                re += coefficient * workspace->metric[source];
-                im += coefficient * workspace->scratch[source];
-            }
+            const float coefficient = taps[tap + HALF];
+            re += coefficient * workspace->metric[source];
+            im += coefficient * workspace->scratch[source];
         }
         iq[index].re = (float)re;
         iq[index].im = (float)im;
@@ -181,6 +188,13 @@ wrj_status_t m3_estimate_spectral_center(const wrj_cf32_t *iq, uint32_t count,
     if (block_count == 0U) {
         return WRJ_ERR_DATA;
     }
+    /* spectrum_weight has spectrum_length elements and is not used for
+     * spectral weights until after all FFT blocks have been processed. */
+    for (bin = 0U; bin < fft_size; ++bin) {
+        workspace->spectrum_weight[bin] = 0.5f - 0.5f *
+            cosf(2.0f * (float)WRJ_PI * (float)bin /
+                 (float)WRJ_MAX(1U, fft_size - 1U));
+    }
     for (block = 0U; block < block_count; ++block) {
         const uint32_t block_ordinal = available_blocks > block_count && block_count > 1U ?
             (uint32_t)llround(1.0 + (double)block * (double)(available_blocks - 1U) /
@@ -189,8 +203,7 @@ wrj_status_t m3_estimate_spectral_center(const wrj_cf32_t *iq, uint32_t count,
         double block_energy = 0.0;
         for (bin = 0U; bin < fft_size; ++bin) {
             const uint32_t sample = start + bin;
-            const float window = 0.5f - 0.5f * cosf(2.0f * (float)WRJ_PI * (float)bin /
-                                                     (float)WRJ_MAX(1U, fft_size - 1U));
+            const float window = workspace->spectrum_weight[bin];
             workspace->fft_re[bin] = (sample < count) ? iq[sample].re * window : 0.0f;
             workspace->fft_im[bin] = (sample < count) ? iq[sample].im * window : 0.0f;
             block_energy += (double)workspace->fft_re[bin] * workspace->fft_re[bin] +
@@ -423,7 +436,13 @@ wrj_status_t m3_integer_cfo_search(const wrj_cf32_t *iq, uint32_t count,
                                    m3_workspace_t *workspace, int32_t *selected_index,
                                    float *selected_offset_hz)
 {
+    enum { CANDIDATE_COUNT = 7 };
     int32_t candidate;
+    double rotation[CANDIDATE_COUNT];
+    double sum_re[CANDIDATE_COUNT] = {0.0};
+    double sum_im[CANDIDATE_COUNT] = {0.0};
+    double weight = 0.0;
+    uint32_t index;
     float baseline_score = 0.0f;
     float best_score = -1.0f;
     int32_t best_index = 0;
@@ -434,29 +453,34 @@ wrj_status_t m3_integer_cfo_search(const wrj_cf32_t *iq, uint32_t count,
     if (iq == NULL || count < 64U || sample_rate_hz <= 0.0f || subcarrier_spacing_hz <= 0.0f) {
         return WRJ_ERR_ARGUMENT;
     }
+    M3_PERF_COUNT(M3_PERF_OP_CFO_CANDIDATES, 7U);
+    M3_PERF_COUNT(M3_PERF_OP_INTEGER_CFO_CANDIDATES, 7U);
     for (candidate = -3; candidate <= 3; ++candidate) {
-        const double rotation = -2.0 * WRJ_PI * (double)candidate *
+        rotation[candidate + 3] = -2.0 * WRJ_PI * (double)candidate *
             (double)subcarrier_spacing_hz / (double)sample_rate_hz;
-        double sum_re = 0.0;
-        double sum_im = 0.0;
-        double weight = 0.0;
-        uint32_t index;
-        for (index = 0U; index + 4U < count; index += 4U) {
-            const wrj_cf32_t a = iq[index];
-            const wrj_cf32_t b = iq[index + 4U];
-            const double magnitude_a = sqrt((double)a.re * a.re + (double)a.im * a.im) + 1.0e-12;
-            const double magnitude_b = sqrt((double)b.re * b.re + (double)b.im * b.im) + 1.0e-12;
-            const double phase_a = 4.0 * atan2((double)a.im, (double)a.re);
-            const double phase_b = 4.0 * atan2((double)b.im, (double)b.re);
-            const double delta = phase_b - phase_a + 16.0 * rotation;
-            const double w = fmin(magnitude_a, magnitude_b);
-            sum_re += w * cos(delta);
-            sum_im += w * sin(delta);
-            weight += w;
+    }
+    for (index = 0U; index + 4U < count; index += 4U) {
+        const wrj_cf32_t a = iq[index];
+        const wrj_cf32_t b = iq[index + 4U];
+        const double magnitude_a = sqrt((double)a.re * a.re + (double)a.im * a.im) + 1.0e-12;
+        const double magnitude_b = sqrt((double)b.re * b.re + (double)b.im * b.im) + 1.0e-12;
+        const double phase_a = 4.0 * atan2((double)a.im, (double)a.re);
+        const double phase_b = 4.0 * atan2((double)b.im, (double)b.re);
+        const double w = fmin(magnitude_a, magnitude_b);
+        for (candidate = -3; candidate <= 3; ++candidate) {
+            const uint32_t slot = (uint32_t)(candidate + 3);
+            const double delta = phase_b - phase_a + 16.0 * rotation[slot];
+            sum_re[slot] += w * cos(delta);
+            sum_im[slot] += w * sin(delta);
         }
+        weight += w;
+    }
+    for (candidate = -3; candidate <= 3; ++candidate) {
+        const uint32_t slot = (uint32_t)(candidate + 3);
         if (weight > 0.0) {
-            const float coherence = (float)(sqrt(sum_re * sum_re + sum_im * sum_im) / weight);
-            const float residual = (float)fabs(atan2(sum_im, sum_re));
+            const float coherence = (float)(sqrt(sum_re[slot] * sum_re[slot] +
+                                                  sum_im[slot] * sum_im[slot]) / weight);
+            const float residual = (float)fabs(atan2(sum_im[slot], sum_re[slot]));
             const float score = coherence * expf(-residual * residual / 0.25f);
             if (candidate == 0) {
                 baseline_score = score;

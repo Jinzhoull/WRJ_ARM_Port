@@ -1,4 +1,5 @@
 #include "m3_module3.h"
+#include "common/perf_timer.h"
 
 #include <stdlib.h>
 
@@ -70,9 +71,10 @@ static void m3_ble_dewhiten(uint8_t *bits, uint32_t count)
     }
 }
 
-static int m3_ble_crc_attempt(const wrj_cf32_t *iq, uint32_t count, uint32_t start,
+static int m3_ble_crc_attempt(const double *phase_delta, uint32_t count, uint32_t start,
                               uint32_t sps, int32_t shift, uint32_t half_window,
-                              const int8_t *expected, int32_t *timing_offset)
+                              const int8_t *expected, const uint8_t *whiten_mask,
+                              int32_t *timing_offset)
 {
     enum { SYNC_BITS = 40, DATA_BITS = 336 };
     float soft[SYNC_BITS + DATA_BITS];
@@ -88,7 +90,7 @@ static int m3_ble_crc_attempt(const wrj_cf32_t *iq, uint32_t count, uint32_t sta
     uint32_t pdu_bits;
     const uint32_t lag = WRJ_MAX(1U, sps / 4U);
 
-    for (bit = 0U; bit < SYNC_BITS + DATA_BITS; ++bit) {
+    for (bit = 0U; bit < SYNC_BITS + 16U; ++bit) {
         const int64_t center = (int64_t)start + (int64_t)shift + (int64_t)(sps / 2U) +
             (int64_t)bit * (int64_t)sps;
         const int64_t low = center - (int64_t)half_window;
@@ -99,10 +101,7 @@ static int m3_ble_crc_attempt(const wrj_cf32_t *iq, uint32_t count, uint32_t sta
             return 0;
         }
         for (sample = low; sample <= high; ++sample) {
-            const wrj_cf32_t a = iq[sample];
-            const wrj_cf32_t b = iq[sample + lag];
-            phase_sum += atan2((double)a.re * b.im - (double)a.im * b.re,
-                               (double)a.re * b.re + (double)a.im * b.im) / (double)lag;
+            phase_sum += phase_delta[sample];
         }
         soft[bit] = (float)(phase_sum / (double)(2U * half_window + 1U));
     }
@@ -125,14 +124,14 @@ static int m3_ble_crc_attempt(const wrj_cf32_t *iq, uint32_t count, uint32_t sta
         return 0;
     }
     intercept = soft_mean - slope * expected_mean;
-    for (bit = 0U; bit < DATA_BITS; ++bit) {
+    for (bit = 0U; bit < 16U; ++bit) {
         raw[bit] = (uint8_t)((((double)soft[SYNC_BITS + bit] - intercept) / slope) > 0.0);
     }
-    m3_ble_dewhiten(raw, DATA_BITS);
     {
         uint32_t length = 0U;
         for (bit = 0U; bit < 8U; ++bit) {
-            length |= (uint32_t)raw[8U + bit] << bit;
+            const uint8_t decoded = raw[8U + bit] ^ whiten_mask[8U + bit];
+            length |= (uint32_t)decoded << bit;
         }
         length &= 63U;
         if (length < 6U || length > 37U) {
@@ -140,12 +139,34 @@ static int m3_ble_crc_attempt(const wrj_cf32_t *iq, uint32_t count, uint32_t sta
         }
         pdu_bits = (2U + length) * 8U;
     }
+    for (bit = SYNC_BITS + 16U; bit < SYNC_BITS + DATA_BITS; ++bit) {
+        const int64_t center = (int64_t)start + (int64_t)shift + (int64_t)(sps / 2U) +
+            (int64_t)bit * (int64_t)sps;
+        const int64_t low = center - (int64_t)half_window;
+        const int64_t high = center + (int64_t)half_window;
+        double phase_sum = 0.0;
+        int64_t sample;
+        if (low < 0 || high + (int64_t)lag >= (int64_t)count) {
+            return 0;
+        }
+        for (sample = low; sample <= high; ++sample) {
+            phase_sum += phase_delta[sample];
+        }
+        soft[bit] = (float)(phase_sum / (double)(2U * half_window + 1U));
+    }
+    for (bit = 16U; bit < DATA_BITS; ++bit) {
+        raw[bit] = (uint8_t)((((double)soft[SYNC_BITS + bit] - intercept) / slope) > 0.0);
+    }
+    for (bit = 0U; bit < DATA_BITS; ++bit) {
+        raw[bit] ^= whiten_mask[bit];
+    }
     if (pdu_bits + 24U > DATA_BITS) {
         return 0;
     }
     for (bit = 0U; bit < 24U; ++bit) {
         received_crc = (received_crc << 1U) | (uint32_t)raw[pdu_bits + bit];
     }
+    M3_PERF_COUNT(M3_PERF_OP_CRC_CHECKS, 1U);
     if (m3_ble_crc24(raw, pdu_bits) == received_crc) {
         if (timing_offset != NULL) {
             *timing_offset = shift;
@@ -225,6 +246,8 @@ static float m3_template_score(const wrj_cf32_t *iq, uint32_t count, int64_t sta
     if (start < 0 || start + (int64_t)length > (int64_t)count) {
         return 0.0f;
     }
+    M3_PERF_COUNT(M3_PERF_OP_CORRELATION_CALLS, 1U);
+    M3_PERF_COUNT(M3_PERF_OP_CORRELATION_EVALUATIONS, length);
     for (index = 0U; index < length; ++index) {
         const wrj_cf32_t sample = iq[start + index];
         const float tr = template_re[index];
@@ -270,11 +293,19 @@ wrj_status_t m3_droneid_synchronize(const wrj_cf32_t *iq, uint32_t count,
     uint32_t frame;
     uint32_t boundary;
     uint32_t output = 0U;
+    M3_PERF_TIMER(sync_timer);
+    M3_PERF_TIMER(cp_fusion_timer);
+    M3_PERF_TIMER(zc_timer);
+    M3_PERF_TIMER(alignment_timer);
     if (nfft > workspace->spectrum_length || count <= frame_length) {
         return WRJ_ERR_CAPACITY;
     }
     memset(&cp_result, 0, sizeof(cp_result));
+    M3_PERF_START(sync_timer);
+    M3_PERF_START(cp_fusion_timer);
     (void)m3_cp_synchronize(iq, count, nfft, cp, max_frames, workspace, &cp_result);
+    M3_PERF_STOP(M3_PERF_DRONEID_CP_FUSION, cp_fusion_timer);
+    M3_PERF_START(zc_timer);
     m3_generate_droneid_template(nfft, 601U, 600U, workspace->spectrum_smooth,
                                  workspace->spectrum_weight, workspace);
     m3_generate_droneid_template(nfft, 601U, 147U, workspace->spectrum_aux,
@@ -292,8 +323,12 @@ wrj_status_t m3_droneid_synchronize(const wrj_cf32_t *iq, uint32_t count,
         }
     }
     if (best_start < 0) {
+        M3_PERF_STOP(M3_PERF_DRONEID_ZC, zc_timer);
+        M3_PERF_STOP(M3_PERF_DRONEID_SYNC, sync_timer);
         return WRJ_ERR_DATA;
     }
+    M3_PERF_COUNT(M3_PERF_OP_FRAME_CANDIDATES,
+                  (uint64_t)cp_result.num_frames * WRJ_ARRAY_COUNT(boundaries));
     result->original_frame_start = (float)best_start;
     {
         const int32_t radius = WRJ_MIN(3000, (int32_t)(nfft / 4U));
@@ -307,6 +342,8 @@ wrj_status_t m3_droneid_synchronize(const wrj_cf32_t *iq, uint32_t count,
                 best_offset = offset;
             }
         }
+        M3_PERF_COUNT(M3_PERF_OP_FRAME_CANDIDATES,
+                      (uint64_t)((2 * radius) / 8 + 1 + 17));
         for (offset = best_offset - 8; offset <= best_offset + 8; ++offset) {
             const float score = m3_droneid_candidate_score(iq, count, best_start + offset,
                                                            offset600, offset147, nfft, workspace);
@@ -319,6 +356,8 @@ wrj_status_t m3_droneid_synchronize(const wrj_cf32_t *iq, uint32_t count,
         result->frame_offset_correction = (float)best_offset;
         result->timing_alignment_improved = (uint8_t)(best_offset != 0);
     }
+    M3_PERF_STOP(M3_PERF_DRONEID_ZC, zc_timer);
+    M3_PERF_START(alignment_timer);
     while (best_start < 0) {
         best_start += frame_length;
     }
@@ -344,6 +383,8 @@ wrj_status_t m3_droneid_synchronize(const wrj_cf32_t *iq, uint32_t count,
     result->fractional_cfo_hz = cp_result.fractional_cfo_hz;
     snprintf(result->sync_method, sizeof(result->sync_method),
              "DJI_DroneID_ZC600_ZC147_plus_CP");
+    M3_PERF_STOP(M3_PERF_FRAME_ALIGNMENT, alignment_timer);
+    M3_PERF_STOP(M3_PERF_DRONEID_SYNC, sync_timer);
     return output > 0U ? WRJ_OK : WRJ_ERR_DATA;
 }
 
@@ -358,7 +399,7 @@ wrj_status_t m3_remoteid_ble_synchronize(const wrj_cf32_t *iq, uint32_t count,
     uint16_t known_positions[96];
     int8_t known_signs[96];
     uint8_t known_count = 0U;
-    uint8_t whiten_mask[120] = {0U};
+    uint8_t whiten_mask[336] = {0U};
     const uint32_t sps = WRJ_MAX(4U, (uint32_t)lroundf(sample_rate_hz / 1000000.0f));
     uint32_t phase;
     uint32_t candidate_count = 0U;
@@ -372,9 +413,19 @@ wrj_status_t m3_remoteid_ble_synchronize(const wrj_cf32_t *iq, uint32_t count,
     float repeat_score = 0.0f;
     const wrj_cf32_t *signal = workspace->baseband;
     const uint32_t min_separation = (uint32_t)lroundf(0.45e-3f * sample_rate_hz);
+    M3_PERF_TIMER(sync_timer);
+    M3_PERF_TIMER(aa_timer);
+    M3_PERF_TIMER(phase_timer);
+    M3_PERF_TIMER(recovery_timer);
+    M3_PERF_TIMER(alignment_timer);
+#ifdef WRJ_ENABLE_PROFILING
+    uint64_t hypothesis_count = 0U;
+#endif
     if (count < 64U * sps) {
         return WRJ_ERR_DATA;
     }
+    M3_PERF_START(sync_timer);
+    M3_PERF_START(aa_timer);
     /* Fixed receiver-side anti-noise smoothing, equivalent to the bounded
      * BLE low-pass branch in MATLAB.  The window depends only on samples per
      * symbol and never on candidate identity or decoded content. */
@@ -411,7 +462,7 @@ wrj_status_t m3_remoteid_ble_synchronize(const wrj_cf32_t *iq, uint32_t count,
         known_positions[known_count] = (uint16_t)index;
         known_signs[known_count++] = expected[index];
     }
-    m3_ble_dewhiten(whiten_mask, 120U);
+    m3_ble_dewhiten(whiten_mask, 336U);
     for (index = 0U; index < 7U; ++index) {
         uint32_t bit;
         for (bit = 0U; bit < 8U; ++bit) {
@@ -423,12 +474,14 @@ wrj_status_t m3_remoteid_ble_synchronize(const wrj_cf32_t *iq, uint32_t count,
         }
     }
     m3_ble_lagged_discriminator(signal, count, sps, workspace->metric);
+    M3_PERF_START(phase_timer);
     for (phase = 0U; phase < sps; ++phase) {
         const uint32_t symbols = (count - 1U - phase) / sps;
         uint32_t symbol;
         if (symbols < 160U) {
             continue;
         }
+        M3_PERF_COUNT(M3_PERF_OP_BLE_SAMPLING_PHASES, 1U);
         for (symbol = 0U; symbol < symbols; ++symbol) {
             uint32_t q;
             double sum = 0.0;
@@ -457,7 +510,10 @@ wrj_status_t m3_remoteid_ble_synchronize(const wrj_cf32_t *iq, uint32_t count,
             }
         }
     }
+    M3_PERF_STOP(M3_PERF_BLE_PHASE_SEARCH, phase_timer);
     if (score_count == 0U) {
+        M3_PERF_STOP(M3_PERF_BLE_PREAMBLE_AA, aa_timer);
+        M3_PERF_STOP(M3_PERF_BLE_SYNC, sync_timer);
         return WRJ_ERR_DATA;
     }
     /* Match the MATLAB receiver's robust candidate policy: the absolute
@@ -480,8 +536,14 @@ wrj_status_t m3_remoteid_ble_synchronize(const wrj_cf32_t *iq, uint32_t count,
         }
     }
     if (candidate_count == 0U) {
+        M3_PERF_STOP(M3_PERF_BLE_PREAMBLE_AA, aa_timer);
+        M3_PERF_STOP(M3_PERF_BLE_SYNC, sync_timer);
         return WRJ_ERR_DATA;
     }
+    M3_PERF_COUNT(M3_PERF_OP_CORRELATION_CALLS, score_count);
+    M3_PERF_COUNT(M3_PERF_OP_CORRELATION_EVALUATIONS,
+                  (uint64_t)score_count * (uint64_t)known_count);
+    M3_PERF_COUNT(M3_PERF_OP_FRAME_CANDIDATES, score_count);
     qsort(workspace->peak_candidates, candidate_count, sizeof(m3_peak_t), m3_peak_value_desc);
     /* Packet recovery deliberately keeps a denser finite bank than the
      * frame-grid output.  CRC24, not correlation alone, decides which of
@@ -502,6 +564,18 @@ wrj_status_t m3_remoteid_ble_synchronize(const wrj_cf32_t *iq, uint32_t count,
             recovery_locations[recovery_count++] = workspace->peak_candidates[index].index;
         }
     }
+    M3_PERF_STOP(M3_PERF_BLE_PREAMBLE_AA, aa_timer);
+    M3_PERF_START(recovery_timer);
+    if (recovery_count != 0U) {
+        const uint32_t lag = WRJ_MAX(1U, sps / 4U);
+        for (index = 0U; index + lag < count; ++index) {
+            const wrj_cf32_t a = signal[index];
+            const wrj_cf32_t b = signal[index + lag];
+            workspace->ble_phase_delta[index] =
+                atan2((double)a.re * b.im - (double)a.im * b.re,
+                      (double)a.re * b.re + (double)a.im * b.im) / (double)lag;
+        }
+    }
     for (index = 0U; index < recovery_count; ++index) {
         static const float window_fractions[3] = {0.22f, 0.32f, 0.42f};
         const int32_t shift_step = (int32_t)WRJ_MAX(1U, sps / 8U);
@@ -514,8 +588,11 @@ wrj_status_t m3_remoteid_ble_synchronize(const wrj_cf32_t *iq, uint32_t count,
             int32_t shift;
             for (shift = -(int32_t)sps; shift <= (int32_t)sps; shift += shift_step) {
                 ++result->crc_attempt_count;
-                if (m3_ble_crc_attempt(signal, count, recovery_locations[index], sps,
-                                       shift, half_window, expected, &best_shift) != 0) {
+#ifdef WRJ_ENABLE_PROFILING
+                ++hypothesis_count;
+#endif
+                if (m3_ble_crc_attempt(workspace->ble_phase_delta, count, recovery_locations[index], sps,
+                                       shift, half_window, expected, whiten_mask, &best_shift) != 0) {
                     ++result->crc_success_count;
                     crc_ok = 1;
                     break;
@@ -526,6 +603,9 @@ wrj_status_t m3_remoteid_ble_synchronize(const wrj_cf32_t *iq, uint32_t count,
             result->symbol_timing_offset = (float)best_shift;
         }
     }
+    M3_PERF_COUNT(M3_PERF_OP_BLE_HYPOTHESES, hypothesis_count);
+    M3_PERF_STOP(M3_PERF_BLE_LOW_SNR_RECOVERY, recovery_timer);
+    M3_PERF_START(alignment_timer);
     for (index = 0U; index < candidate_count && selected < WRJ_MIN(max_frames, WRJ_MAX_FRAMES); ++index) {
         uint32_t other;
         int separated = 1;
@@ -543,6 +623,8 @@ wrj_status_t m3_remoteid_ble_synchronize(const wrj_cf32_t *iq, uint32_t count,
         }
     }
     qsort(workspace->peak_selected, selected, sizeof(m3_peak_t), m3_peak_index_asc);
+    M3_PERF_COUNT(M3_PERF_OP_FRAME_CANDIDATES, candidate_count);
+    M3_PERF_STOP(M3_PERF_FRAME_ALIGNMENT, alignment_timer);
     for (index = 0U; index < selected; ++index) {
         result->frame_start_samples_0based[index] = workspace->peak_selected[index].index;
         result->frame_confidence[index] = workspace->peak_selected[index].value;
@@ -581,6 +663,7 @@ wrj_status_t m3_remoteid_ble_synchronize(const wrj_cf32_t *iq, uint32_t count,
     }
     snprintf(result->sync_method, sizeof(result->sync_method),
              "BLE_1M_preamble_access_address_multiphase");
+    M3_PERF_STOP(M3_PERF_BLE_SYNC, sync_timer);
     return WRJ_OK;
 }
 
@@ -600,6 +683,7 @@ wrj_status_t m3_burst_synchronize(const wrj_cf32_t *iq, uint32_t count,
     if (blocks < 6U) {
         return WRJ_ERR_DATA;
     }
+    M3_PERF_COUNT(M3_PERF_OP_FRAME_CANDIDATES, blocks);
     for (block = 0U; block < blocks; ++block) {
         uint32_t sample;
         double energy = 0.0;

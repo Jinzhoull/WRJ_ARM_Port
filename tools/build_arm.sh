@@ -28,7 +28,8 @@ cmake -S "${project_root}" -B "${build_dir}" \
     -DCMAKE_C_FLAGS_RELEASE="-O2 -DNDEBUG" \
     -DCMAKE_TOOLCHAIN_FILE="${toolchain_file}" \
     -DCMAKE_EXE_LINKER_FLAGS="${link_flags}" \
-    -DWRJ_ENABLE_NEON="${WRJ_ENABLE_NEON:-OFF}"
+    -DWRJ_ENABLE_NEON="${WRJ_ENABLE_NEON:-OFF}" \
+    -DWRJ_ENABLE_PROFILING="${WRJ_ENABLE_PROFILING:-OFF}"
 
 cmake --build "${build_dir}" --parallel "${JOBS:-$(getconf _NPROCESSORS_ONLN 2>/dev/null || echo 1)}"
 echo "ARM build complete: ${build_dir}/wrj_arm_port"

@@ -1,4 +1,5 @@
 #include "m3_module3.h"
+#include "common/perf_timer.h"
 
 #include <stdlib.h>
 
@@ -54,6 +55,9 @@ static wrj_status_t m3_cp_metric(const wrj_cf32_t *iq, uint32_t count,
         return WRJ_ERR_ARGUMENT;
     }
     *metric_count = count - nfft - cp_samples + 1U;
+    M3_PERF_COUNT(M3_PERF_OP_CORRELATION_CALLS, 1U);
+    M3_PERF_COUNT(M3_PERF_OP_CORRELATION_EVALUATIONS, *metric_count);
+    M3_PERF_COUNT(M3_PERF_OP_FRAME_CANDIDATES, *metric_count);
     for (index = 0U; index < cp_samples; ++index) {
         const wrj_cf32_t a = iq[index];
         const wrj_cf32_t b = iq[index + nfft];
@@ -125,6 +129,8 @@ wrj_status_t m3_cp_synchronize(const wrj_cf32_t *iq, uint32_t count,
     float peak_metric = 0.0f;
     float support;
     wrj_status_t status;
+    M3_PERF_TIMER(fractional_timer);
+    M3_PERF_TIMER(alignment_timer);
 
     if (iq == NULL || workspace == NULL || result == NULL || nfft < 8U || cp_samples < 4U ||
         max_frames == 0U || count > workspace->max_samples) {
@@ -162,6 +168,7 @@ wrj_status_t m3_cp_synchronize(const wrj_cf32_t *iq, uint32_t count,
         workspace->peak_candidates[0].value = workspace->metric[best];
         candidate_count = 1U;
     }
+    M3_PERF_START(alignment_timer);
     qsort(workspace->peak_candidates, candidate_count, sizeof(m3_peak_t), m3_peak_value_desc);
     for (index = 0U; index < candidate_count && selected_count < workspace->selected_peak_capacity; ++index) {
         uint32_t other;
@@ -180,6 +187,7 @@ wrj_status_t m3_cp_synchronize(const wrj_cf32_t *iq, uint32_t count,
         }
     }
     qsort(workspace->peak_selected, selected_count, sizeof(m3_peak_t), m3_peak_index_asc);
+    M3_PERF_STOP(M3_PERF_FRAME_ALIGNMENT, alignment_timer);
     for (index = 0U; index < selected_count; ++index) {
         workspace->scratch[index] = workspace->peak_selected[index].value;
     }
@@ -197,6 +205,7 @@ wrj_status_t m3_cp_synchronize(const wrj_cf32_t *iq, uint32_t count,
         return WRJ_ERR_DATA;
     }
     support = (float)kept_count / (float)selected_count;
+    M3_PERF_START(fractional_timer);
     for (index = 0U; index < kept_count; ++index) {
         peak_metric = WRJ_MAX(peak_metric, workspace->peak_selected[index].value);
     }
@@ -251,17 +260,20 @@ wrj_status_t m3_cp_synchronize(const wrj_cf32_t *iq, uint32_t count,
         result->fractional_cfo_hz = (float)(atan2(phase_im, phase_re) /
             (2.0 * WRJ_PI * (double)nfft));
     }
+    M3_PERF_STOP(M3_PERF_FRACTIONAL_CFO, fractional_timer);
 
     for (index = 0U; index < kept_count; ++index) {
         workspace->peak_candidates[index].index = workspace->peak_selected[index].index;
         workspace->peak_candidates[index].value = wrj_clip01(
             (workspace->peak_selected[index].value - base_level) / WRJ_MAX(1.0f - base_level, 0.05f));
     }
+    M3_PERF_START(alignment_timer);
     qsort(workspace->peak_candidates, kept_count, sizeof(m3_peak_t), m3_peak_value_desc);
     output_count = WRJ_MIN(WRJ_MIN(max_frames, WRJ_MAX_FRAMES), kept_count);
     memcpy(workspace->peak_selected, workspace->peak_candidates,
            sizeof(m3_peak_t) * (size_t)output_count);
     qsort(workspace->peak_selected, output_count, sizeof(m3_peak_t), m3_peak_index_asc);
+    M3_PERF_STOP(M3_PERF_FRAME_ALIGNMENT, alignment_timer);
     for (index = 0U; index < output_count; ++index) {
         result->frame_start_samples_0based[index] = workspace->peak_selected[index].index;
         result->frame_confidence[index] = workspace->peak_selected[index].value;

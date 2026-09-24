@@ -18,6 +18,7 @@ typedef struct {
     float *power;
     float *metric;
     float *scratch;
+    double *ble_phase_delta;
     m3_peak_t *peak_candidates;
     m3_peak_t *peak_selected;
     uint8_t *flags;
