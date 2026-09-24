@@ -73,7 +73,8 @@ static void m3_ble_dewhiten(uint8_t *bits, uint32_t count)
 
 static int m3_ble_crc_attempt(const double *phase_delta, uint32_t count, uint32_t start,
                               uint32_t sps, int32_t shift, uint32_t half_window,
-                              const int8_t *expected, int32_t *timing_offset)
+                              const int8_t *expected, const uint8_t *whiten_mask,
+                              int32_t *timing_offset)
 {
     enum { SYNC_BITS = 40, DATA_BITS = 336 };
     float soft[SYNC_BITS + DATA_BITS];
@@ -89,7 +90,7 @@ static int m3_ble_crc_attempt(const double *phase_delta, uint32_t count, uint32_
     uint32_t pdu_bits;
     const uint32_t lag = WRJ_MAX(1U, sps / 4U);
 
-    for (bit = 0U; bit < SYNC_BITS + DATA_BITS; ++bit) {
+    for (bit = 0U; bit < SYNC_BITS + 16U; ++bit) {
         const int64_t center = (int64_t)start + (int64_t)shift + (int64_t)(sps / 2U) +
             (int64_t)bit * (int64_t)sps;
         const int64_t low = center - (int64_t)half_window;
@@ -123,20 +124,41 @@ static int m3_ble_crc_attempt(const double *phase_delta, uint32_t count, uint32_
         return 0;
     }
     intercept = soft_mean - slope * expected_mean;
-    for (bit = 0U; bit < DATA_BITS; ++bit) {
+    for (bit = 0U; bit < 16U; ++bit) {
         raw[bit] = (uint8_t)((((double)soft[SYNC_BITS + bit] - intercept) / slope) > 0.0);
     }
-    m3_ble_dewhiten(raw, DATA_BITS);
     {
         uint32_t length = 0U;
         for (bit = 0U; bit < 8U; ++bit) {
-            length |= (uint32_t)raw[8U + bit] << bit;
+            const uint8_t decoded = raw[8U + bit] ^ whiten_mask[8U + bit];
+            length |= (uint32_t)decoded << bit;
         }
         length &= 63U;
         if (length < 6U || length > 37U) {
             return 0;
         }
         pdu_bits = (2U + length) * 8U;
+    }
+    for (bit = SYNC_BITS + 16U; bit < SYNC_BITS + DATA_BITS; ++bit) {
+        const int64_t center = (int64_t)start + (int64_t)shift + (int64_t)(sps / 2U) +
+            (int64_t)bit * (int64_t)sps;
+        const int64_t low = center - (int64_t)half_window;
+        const int64_t high = center + (int64_t)half_window;
+        double phase_sum = 0.0;
+        int64_t sample;
+        if (low < 0 || high + (int64_t)lag >= (int64_t)count) {
+            return 0;
+        }
+        for (sample = low; sample <= high; ++sample) {
+            phase_sum += phase_delta[sample];
+        }
+        soft[bit] = (float)(phase_sum / (double)(2U * half_window + 1U));
+    }
+    for (bit = 16U; bit < DATA_BITS; ++bit) {
+        raw[bit] = (uint8_t)((((double)soft[SYNC_BITS + bit] - intercept) / slope) > 0.0);
+    }
+    for (bit = 0U; bit < DATA_BITS; ++bit) {
+        raw[bit] ^= whiten_mask[bit];
     }
     if (pdu_bits + 24U > DATA_BITS) {
         return 0;
@@ -377,7 +399,7 @@ wrj_status_t m3_remoteid_ble_synchronize(const wrj_cf32_t *iq, uint32_t count,
     uint16_t known_positions[96];
     int8_t known_signs[96];
     uint8_t known_count = 0U;
-    uint8_t whiten_mask[120] = {0U};
+    uint8_t whiten_mask[336] = {0U};
     const uint32_t sps = WRJ_MAX(4U, (uint32_t)lroundf(sample_rate_hz / 1000000.0f));
     uint32_t phase;
     uint32_t candidate_count = 0U;
@@ -440,7 +462,7 @@ wrj_status_t m3_remoteid_ble_synchronize(const wrj_cf32_t *iq, uint32_t count,
         known_positions[known_count] = (uint16_t)index;
         known_signs[known_count++] = expected[index];
     }
-    m3_ble_dewhiten(whiten_mask, 120U);
+    m3_ble_dewhiten(whiten_mask, 336U);
     for (index = 0U; index < 7U; ++index) {
         uint32_t bit;
         for (bit = 0U; bit < 8U; ++bit) {
@@ -570,7 +592,7 @@ wrj_status_t m3_remoteid_ble_synchronize(const wrj_cf32_t *iq, uint32_t count,
                 ++hypothesis_count;
 #endif
                 if (m3_ble_crc_attempt(workspace->ble_phase_delta, count, recovery_locations[index], sps,
-                                       shift, half_window, expected, &best_shift) != 0) {
+                                       shift, half_window, expected, whiten_mask, &best_shift) != 0) {
                     ++result->crc_success_count;
                     crc_ok = 1;
                     break;
