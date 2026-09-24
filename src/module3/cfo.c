@@ -137,15 +137,16 @@ wrj_status_t m3_bandlimit_fir(wrj_cf32_t *iq, uint32_t count, float sample_rate_
     }
     for (index = 0U; index < count; ++index) {
         int32_t tap;
+        const int32_t first_tap = index < HALF ? -(int32_t)index : -HALF;
+        const int32_t last_tap = count - 1U - index < HALF ?
+            (int32_t)(count - 1U - index) : HALF;
         double re = 0.0;
         double im = 0.0;
-        for (tap = -HALF; tap <= HALF; ++tap) {
+        for (tap = first_tap; tap <= last_tap; ++tap) {
             const int64_t source = (int64_t)index + tap;
-            if (source >= 0 && source < (int64_t)count) {
-                const float coefficient = taps[tap + HALF];
-                re += coefficient * workspace->metric[source];
-                im += coefficient * workspace->scratch[source];
-            }
+            const float coefficient = taps[tap + HALF];
+            re += coefficient * workspace->metric[source];
+            im += coefficient * workspace->scratch[source];
         }
         iq[index].re = (float)re;
         iq[index].im = (float)im;
