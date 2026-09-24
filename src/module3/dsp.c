@@ -91,18 +91,38 @@ wrj_status_t m3_select_wideband_numerology(const wrj_cf32_t *iq, uint32_t count,
     static const uint32_t base[5][2] = {
         {512U, 64U}, {1024U, 96U}, {1024U, 128U}, {2048U, 144U}, {2048U, 160U}
     };
+    const uint32_t take = WRJ_MIN(count, 262144U);
+    uint32_t start = 0U;
     uint32_t candidate;
     float best_score = -INFINITY;
     if (iq == NULL || workspace == NULL || nfft == NULL || cp_samples == NULL ||
         count < 8192U || sample_rate_hz <= 0.0f) {
         return WRJ_ERR_ARGUMENT;
     }
+    if (count > take) {
+        const uint32_t windows = WRJ_MIN(7U, WRJ_MAX(1U, count / take));
+        uint32_t window;
+        double best_energy = -1.0;
+        for (window = 0U; window < windows; ++window) {
+            const uint32_t candidate_start = windows > 1U ?
+                (uint32_t)llround((double)(count - take) * (double)window /
+                                  (double)(windows - 1U)) : 0U;
+            uint32_t q;
+            double energy = 0.0;
+            for (q = 0U; q < take; ++q) {
+                energy += wrj_complex_abs2(iq[candidate_start + q].re,
+                                           iq[candidate_start + q].im);
+            }
+            if (energy > best_energy) {
+                best_energy = energy;
+                start = candidate_start;
+            }
+        }
+    }
     for (candidate = 0U; candidate < WRJ_ARRAY_COUNT(base); ++candidate) {
         const uint32_t nf = (uint32_t)lroundf((float)base[candidate][0] * sample_rate_hz / 30720000.0f);
         const uint32_t cp = (uint32_t)lroundf((float)base[candidate][1] * sample_rate_hz / 30720000.0f);
         const uint32_t length = nf + cp;
-        const uint32_t take = WRJ_MIN(count, 262144U);
-        uint32_t start = 0U;
         uint32_t i;
         uint32_t metric_count;
         float base_level;
@@ -114,26 +134,6 @@ wrj_status_t m3_select_wideband_numerology(const wrj_cf32_t *iq, uint32_t count,
         float score;
         if (take <= nf + cp) {
             continue;
-        }
-        if (count > take) {
-            const uint32_t windows = WRJ_MIN(7U, WRJ_MAX(1U, count / take));
-            uint32_t window;
-            double best_energy = -1.0;
-            for (window = 0U; window < windows; ++window) {
-                const uint32_t candidate_start = windows > 1U ?
-                    (uint32_t)llround((double)(count - take) * (double)window /
-                                      (double)(windows - 1U)) : 0U;
-                uint32_t q;
-                double energy = 0.0;
-                for (q = 0U; q < take; ++q) {
-                    energy += wrj_complex_abs2(iq[candidate_start + q].re,
-                                               iq[candidate_start + q].im);
-                }
-                if (energy > best_energy) {
-                    best_energy = energy;
-                    start = candidate_start;
-                }
-            }
         }
         metric_count = take - nf - cp + 1U;
         M3_PERF_COUNT(M3_PERF_OP_CORRELATION_CALLS, 1U);
