@@ -103,7 +103,7 @@ wrj_status_t m3_workspace_init(m3_workspace_t *workspace, const m3_config_t *con
      * at most roughly N/2 candidates can exist. */
     workspace->peak_capacity = config->max_samples / 2U + 1U;
     workspace->selected_peak_capacity = 8192U;
-    M3_PERF_COUNT(M3_PERF_OP_CALLOC_CALLS, 15U);
+    M3_PERF_COUNT(M3_PERF_OP_CALLOC_CALLS, 16U);
     workspace->baseband = calloc(samples, sizeof(*workspace->baseband));
     workspace->compensated = calloc(samples, sizeof(*workspace->compensated));
     workspace->fft_re = calloc(fft_size, sizeof(*workspace->fft_re));
@@ -111,6 +111,7 @@ wrj_status_t m3_workspace_init(m3_workspace_t *workspace, const m3_config_t *con
     workspace->power = calloc(fft_size, sizeof(*workspace->power));
     workspace->metric = calloc(samples, sizeof(*workspace->metric));
     workspace->scratch = calloc(samples, sizeof(*workspace->scratch));
+    workspace->ble_phase_delta = calloc(samples, sizeof(*workspace->ble_phase_delta));
     workspace->peak_candidates = calloc(workspace->peak_capacity, sizeof(*workspace->peak_candidates));
     workspace->peak_selected = calloc(workspace->selected_peak_capacity, sizeof(*workspace->peak_selected));
     workspace->flags = calloc(samples, sizeof(*workspace->flags));
@@ -124,6 +125,7 @@ wrj_status_t m3_workspace_init(m3_workspace_t *workspace, const m3_config_t *con
     if (workspace->baseband == NULL || workspace->compensated == NULL ||
         workspace->fft_re == NULL || workspace->fft_im == NULL ||
         workspace->power == NULL || workspace->metric == NULL || workspace->scratch == NULL ||
+        workspace->ble_phase_delta == NULL ||
         workspace->peak_candidates == NULL || workspace->peak_selected == NULL || workspace->flags == NULL ||
         workspace->spectrum_block_power == NULL || workspace->spectrum_block_energy == NULL ||
         workspace->spectrum_smooth == NULL || workspace->spectrum_weight == NULL ||
@@ -139,7 +141,7 @@ void m3_workspace_release(m3_workspace_t *workspace)
     if (workspace == NULL) {
         return;
     }
-    M3_PERF_COUNT(M3_PERF_OP_FREE_CALLS, 15U);
+    M3_PERF_COUNT(M3_PERF_OP_FREE_CALLS, 16U);
     free(workspace->baseband);
     free(workspace->compensated);
     free(workspace->fft_re);
@@ -147,6 +149,7 @@ void m3_workspace_release(m3_workspace_t *workspace)
     free(workspace->power);
     free(workspace->metric);
     free(workspace->scratch);
+    free(workspace->ble_phase_delta);
     free(workspace->peak_candidates);
     free(workspace->peak_selected);
     free(workspace->flags);
@@ -165,7 +168,7 @@ size_t m3_workspace_bytes(const m3_workspace_t *workspace)
     }
     return (size_t)workspace->max_samples *
         (sizeof(*workspace->baseband) + sizeof(*workspace->compensated) +
-         2U * sizeof(float) + sizeof(uint8_t)) +
+         2U * sizeof(float) + sizeof(*workspace->ble_phase_delta) + sizeof(uint8_t)) +
         (size_t)workspace->peak_capacity * sizeof(m3_peak_t) +
         (size_t)workspace->selected_peak_capacity * sizeof(m3_peak_t) +
         (size_t)workspace->fft_size * 3U * sizeof(float) +

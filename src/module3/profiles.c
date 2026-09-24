@@ -71,7 +71,7 @@ static void m3_ble_dewhiten(uint8_t *bits, uint32_t count)
     }
 }
 
-static int m3_ble_crc_attempt(const wrj_cf32_t *iq, uint32_t count, uint32_t start,
+static int m3_ble_crc_attempt(const double *phase_delta, uint32_t count, uint32_t start,
                               uint32_t sps, int32_t shift, uint32_t half_window,
                               const int8_t *expected, int32_t *timing_offset)
 {
@@ -100,10 +100,7 @@ static int m3_ble_crc_attempt(const wrj_cf32_t *iq, uint32_t count, uint32_t sta
             return 0;
         }
         for (sample = low; sample <= high; ++sample) {
-            const wrj_cf32_t a = iq[sample];
-            const wrj_cf32_t b = iq[sample + lag];
-            phase_sum += atan2((double)a.re * b.im - (double)a.im * b.re,
-                               (double)a.re * b.re + (double)a.im * b.im) / (double)lag;
+            phase_sum += phase_delta[sample];
         }
         soft[bit] = (float)(phase_sum / (double)(2U * half_window + 1U));
     }
@@ -547,6 +544,16 @@ wrj_status_t m3_remoteid_ble_synchronize(const wrj_cf32_t *iq, uint32_t count,
     }
     M3_PERF_STOP(M3_PERF_BLE_PREAMBLE_AA, aa_timer);
     M3_PERF_START(recovery_timer);
+    if (recovery_count != 0U) {
+        const uint32_t lag = WRJ_MAX(1U, sps / 4U);
+        for (index = 0U; index + lag < count; ++index) {
+            const wrj_cf32_t a = signal[index];
+            const wrj_cf32_t b = signal[index + lag];
+            workspace->ble_phase_delta[index] =
+                atan2((double)a.re * b.im - (double)a.im * b.re,
+                      (double)a.re * b.re + (double)a.im * b.im) / (double)lag;
+        }
+    }
     for (index = 0U; index < recovery_count; ++index) {
         static const float window_fractions[3] = {0.22f, 0.32f, 0.42f};
         const int32_t shift_step = (int32_t)WRJ_MAX(1U, sps / 8U);
@@ -562,7 +569,7 @@ wrj_status_t m3_remoteid_ble_synchronize(const wrj_cf32_t *iq, uint32_t count,
 #ifdef WRJ_ENABLE_PROFILING
                 ++hypothesis_count;
 #endif
-                if (m3_ble_crc_attempt(signal, count, recovery_locations[index], sps,
+                if (m3_ble_crc_attempt(workspace->ble_phase_delta, count, recovery_locations[index], sps,
                                        shift, half_window, expected, &best_shift) != 0) {
                     ++result->crc_success_count;
                     crc_ok = 1;
