@@ -402,7 +402,8 @@ wrj_status_t m3_run(const wrj_candidate_t *candidate, const wrj_cf32_t *iq,
                                       best_offset_hz - current_offset_hz);
                     primary = best;
                     primary.residual_cfo_hz = best_offset_hz;
-                    primary.fractional_cfo_hz = best_offset_hz / candidate->sample_rate_hz;
+                    /* BLE receiver correction belongs to the residual stage, not CP fractional CFO. */
+                    primary.fractional_cfo_hz = 0.0f;
                     snprintf(primary.sync_method, sizeof(primary.sync_method),
                              "BLE_1M_AA_multiphase_CRC24_residual_CFO");
                 }
@@ -465,7 +466,9 @@ wrj_status_t m3_run(const wrj_candidate_t *candidate, const wrj_cf32_t *iq,
         result->cfo_candidate_count = nfft > 0U ? 7U : 1U;
         result->selected_cfo_score = 0.72f * primary.sync_confidence +
             0.28f * wrj_clip01(primary.peak_metric);
-        result->estimated_cfo_hz = spectral + integer_cfo_offset_hz + result->fractional_cfo_hz;
+        result->estimated_cfo_hz = spectral + integer_cfo_offset_hz +
+            result->fractional_cfo_hz +
+            (profile == WRJ_PROFILE_REMOTEID_BLE ? result->residual_cfo_hz : 0.0f);
         M3_PERF_START(stage_timer);
         m3_estimate_sfo(workspace->compensated, count, nfft, cp_samples, result);
         M3_PERF_STOP(M3_PERF_SFO_ESTIMATION, stage_timer);
