@@ -43,7 +43,7 @@ def main() -> int:
     root = Path(__file__).resolve().parents[1]
     parser.add_argument(
         "--c-results", type=Path,
-        default=root / "results" / "pc" / "module3_regression" / "cases",
+        default=root / "results" / "pc" / "latest-validation" / "module3_regression" / "cases",
     )
     parser.add_argument(
         "--matlab-results",

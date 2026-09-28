@@ -4,6 +4,67 @@
 
 #include <stdlib.h>
 
+static wrj_status_t m3_control_bandlimit_fft(wrj_cf32_t *iq, uint32_t count,
+                                             float sample_rate_hz, float bandwidth_hz)
+{
+    uint32_t length = 1U;
+    float *re;
+    float *im;
+    uint32_t index;
+    const float pass_hz = WRJ_MIN(0.44f * sample_rate_hz,
+                                  WRJ_MAX(600000.0f, 0.62f * bandwidth_hz));
+    const float stop_hz = WRJ_MIN(0.48f * sample_rate_hz,
+                                  WRJ_MAX(pass_hz + 200000.0f, 0.78f * bandwidth_hz));
+    while (length < count && length <= UINT32_MAX / 2U) {
+        length <<= 1U;
+    }
+    if (length < count) {
+        return WRJ_ERR_CAPACITY;
+    }
+    re = calloc(length, sizeof(*re));
+    im = calloc(length, sizeof(*im));
+    if (re == NULL || im == NULL) {
+        free(re);
+        free(im);
+        return WRJ_ERR_MEMORY;
+    }
+    for (index = 0U; index < count; ++index) {
+        re[index] = iq[index].re;
+        im[index] = iq[index].im;
+    }
+    if (m3_fft_forward_radix2(re, im, length) != WRJ_OK) {
+        free(re);
+        free(im);
+        return WRJ_ERR_DATA;
+    }
+    for (index = 0U; index < length; ++index) {
+        const uint32_t centered = WRJ_MIN(index, length - index);
+        const float frequency = (float)centered * sample_rate_hz / (float)length;
+        float gain = 1.0f;
+        if (frequency >= stop_hz) {
+            gain = 0.0f;
+        } else if (frequency > pass_hz) {
+            gain = 0.5f + 0.5f * cosf((float)(WRJ_PI *
+                (frequency - pass_hz) / (stop_hz - pass_hz)));
+        }
+        re[index] *= gain;
+        im[index] = -im[index] * gain;
+    }
+    if (m3_fft_forward_radix2(re, im, length) != WRJ_OK) {
+        free(re);
+        free(im);
+        return WRJ_ERR_DATA;
+    }
+    for (index = 0U; index < count; ++index) {
+        iq[index].re = re[index] / (float)length;
+        iq[index].im = -im[index] / (float)length;
+    }
+    free(re);
+    free(im);
+    return WRJ_OK;
+}
+
+
 static float m3_local_cp_score(const wrj_cf32_t *iq, uint32_t count, uint32_t start,
                                uint32_t nfft, uint32_t cp_samples)
 {
@@ -328,8 +389,13 @@ wrj_status_t m3_run(const wrj_candidate_t *candidate, const wrj_cf32_t *iq,
     memcpy(workspace->baseband, workspace->compensated,
            sizeof(*workspace->baseband) * (size_t)count);
     M3_PERF_START(stage_timer);
-    status = m3_bandlimit_fir(workspace->compensated, count, candidate->sample_rate_hz,
-                              candidate->bandwidth_hz, workspace);
+    if (profile == WRJ_PROFILE_CONTROL_BURST) {
+        status = m3_control_bandlimit_fft(workspace->compensated, count,
+                                          candidate->sample_rate_hz, candidate->bandwidth_hz);
+    } else {
+        status = m3_bandlimit_fir(workspace->compensated, count, candidate->sample_rate_hz,
+                                  candidate->bandwidth_hz, workspace);
+    }
     M3_PERF_STOP(M3_PERF_BANDLIMIT_FIR, stage_timer);
     if (status != WRJ_OK) {
         m3_set_status(result, "bandlimit_failed");
@@ -373,6 +439,8 @@ wrj_status_t m3_run(const wrj_candidate_t *candidate, const wrj_cf32_t *iq,
                     m3_result_t best = primary;
                     float best_offset_hz = 0.0f;
                     float current_offset_hz = 0.0f;
+                    float best_quality = 0.72f * primary.sync_confidence +
+                        0.28f * wrj_clip01(primary.peak_metric);
                     uint32_t residual_index;
                     M3_PERF_START(stage_timer);
                     for (residual_index = 0U; residual_index < 9U; ++residual_index) {
@@ -386,11 +454,14 @@ wrj_status_t m3_run(const wrj_candidate_t *candidate, const wrj_cf32_t *iq,
                         if (m3_remoteid_ble_synchronize(workspace->compensated, count,
                                 candidate->sample_rate_hz, config->max_frames,
                                 workspace, &trial) == WRJ_OK) {
+                            const float trial_quality = 0.72f * trial.sync_confidence +
+                                0.28f * wrj_clip01(trial.peak_metric);
                             if (trial.crc_success_count > best.crc_success_count ||
                                 (trial.crc_success_count == best.crc_success_count &&
-                                 trial.sync_confidence > best.sync_confidence)) {
+                                 trial_quality > best_quality)) {
                                 best = trial;
                                 best_offset_hz = target_offset_hz;
+                                best_quality = trial_quality;
                             }
                         }
                     }

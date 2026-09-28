@@ -88,6 +88,6 @@ IQ_NAME=data/sim_dji_droneid_013_M001.cf32 \
 
 ## 验证报告工具
 
-`tools/validate_module3.py` 对比现有 C Module3 输出与外部 MATLAB 正式表格；默认读取 `results/pc/module3_regression/cases/`，并写入 `docs/MODULE3_VALIDATION.md`。该命令会重生成验证文档，只应在有意更新正式报告时运行；可用 `--output` 指向临时路径进行检查。
+`tools/validate_module3.py` 对比现有 C Module3 输出与外部 MATLAB 正式表格；默认读取 `results/pc/latest-validation/module3_regression/cases/`，并写入 `docs/MODULE3_VALIDATION.md`。该命令会重生成验证文档，只应在有意更新正式报告时运行；可用 `--output` 指向临时路径进行检查。
 
-`tools/validate_module4.py --results results/pc/module4_regression/cases` 汇总 Module4 CSV；需要 MATLAB RemoteID candidate-IQ 表时再传 `--matlab-remoteid`。它不会运行 IQ 样本。
+`tools/validate_module4.py --results results/pc/latest-validation/module4_regression/cases` 汇总 Module4 CSV；需要 MATLAB RemoteID candidate-IQ 表时再传 `--matlab-remoteid`。它不会运行 IQ 样本。

@@ -46,7 +46,7 @@ Reproduce from the repository root (replace `ID` with one of the case basenames)
 cmake --build build-pc/windows --config Release
 ctest --test-dir build-pc\windows -C Release --output-on-failure
 build-pc\windows\wrj_arm_port.exe --handoff data\module12_to_module3_handoff.csv --candidate ID --iq data\cases\ID.cf32 --out build-pc\windows\smoke-results\ID
-python tools/validate_module4.py --results results/pc/module4_regression/cases --matlab-remoteid ..\results_wrj_m12_unknown_58g_final\07_MODULE4_FIELD_CLUSTERING_SEMANTIC_INFERENCE\01_TABLES\module4_remoteid_parsed_information.csv
+python tools/validate_module4.py --results results/pc/latest-validation/module4_regression/cases --matlab-remoteid ..\results_wrj_m12_unknown_58g_final\07_MODULE4_FIELD_CLUSTERING_SEMANTIC_INFERENCE\01_TABLES\module4_remoteid_parsed_information.csv
 ```
 
 Next validation: analyze ARM performance hotspots; resolve Wideband polarity

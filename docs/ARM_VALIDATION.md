@@ -125,7 +125,7 @@ Case details:
 All five outputs are under
 `/root/wrj_arm_test/results/first-run-20260923/o2/` on the board; a byte-preserving
 copy of those case directories and their `run.log` files is archived in
-`results/arm/first-run-20260923-o2/`. All processes returned 0, and none crashed
+`results/arm/latest-validation/`. All processes returned 0, and none crashed
 or ran out of memory. ARM runtimes
 are substantially longer than PC runtimes, especially for BLE recovery on
 RemoteID 028. The current validation establishes ARM/PC numerical and output

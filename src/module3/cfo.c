@@ -381,11 +381,10 @@ wrj_status_t m3_estimate_spectral_center(const wrj_cf32_t *iq, uint32_t count,
                         const float y2 = workspace->fft_re[2U * best_index];
                         const float y3 = workspace->fft_re[2U * (best_index + 1U)];
                         const float denominator = y1 - 2.0f * y2 + y3;
-                        if (fabsf(denominator) > 1.0e-20f) {
-                            const float fraction = WRJ_CLAMP(0.5f * (y1 - y3) / denominator,
-                                                             -0.5f, 0.5f);
-                            symmetry_center += fraction * bin_hz;
-                        }
+                        const double fraction = WRJ_CLAMP(0.5 * ((double)y1 - (double)y3) /
+                                                          WRJ_MAX((double)denominator, 2.2204460492503131e-16),
+                                                          -0.5, 0.5);
+                        symmetry_center += (float)(fraction * (double)bin_hz);
                     }
                 }
             }
