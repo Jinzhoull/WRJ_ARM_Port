@@ -42,6 +42,96 @@ static float m3_quantile(float *scratch, const float *values, uint32_t count, fl
     return scratch[lower] + (position - (float)lower) * (scratch[upper] - scratch[lower]);
 }
 
+/* Optional, read-only CP fusion trace.  The environment variables restrict
+ * diagnostics to one numerology; normal synchronization never opens a file. */
+static void m3_write_cp_fusion_debug(const wrj_cf32_t *iq, uint32_t nfft,
+                                      uint32_t cp_samples, uint32_t max_frames,
+                                      const m3_peak_t *peaks, const float *coherence,
+                                      uint32_t candidate_count, uint32_t separated_count,
+                                      uint32_t kept_count, float peak_threshold,
+                                      float coherence_cut, float fractional_cfo_per_sample)
+{
+    const char *path = getenv("WRJ_M3_CFO_DEBUG_CSV");
+    const char *nfft_text = getenv("WRJ_M3_CFO_DEBUG_NFFT");
+    const char *cp_text = getenv("WRJ_M3_CFO_DEBUG_CP");
+    const char *fs_text = getenv("WRJ_M3_CFO_DEBUG_FS_HZ");
+    m3_peak_t *ranked;
+    FILE *file;
+    uint32_t frame_count;
+    uint32_t selected_count = 0U;
+    uint32_t index;
+    double fs;
+    char summary_path[1024];
+
+    if (path == NULL || nfft_text == NULL || cp_text == NULL || fs_text == NULL ||
+        (uint32_t)strtoul(nfft_text, NULL, 10) != nfft ||
+        (uint32_t)strtoul(cp_text, NULL, 10) != cp_samples) {
+        return;
+    }
+    fs = strtod(fs_text, NULL);
+    if (fs <= 0.0 || kept_count == 0U) {
+        return;
+    }
+    ranked = malloc(sizeof(*ranked) * (size_t)kept_count);
+    if (ranked == NULL) {
+        return;
+    }
+    memcpy(ranked, peaks, sizeof(*ranked) * (size_t)kept_count);
+    qsort(ranked, kept_count, sizeof(*ranked), m3_peak_value_desc);
+    frame_count = WRJ_MIN(WRJ_MIN(max_frames, WRJ_MAX_FRAMES), kept_count);
+    qsort(ranked, frame_count, sizeof(*ranked), m3_peak_index_asc);
+    file = fopen(path, "w");
+    if (file == NULL) {
+        free(ranked);
+        return;
+    }
+    fprintf(file, "frame_id,peak_id,cfo_hz,correlation_real,correlation_imag,"
+                  "correlation_abs,coherence,weight,selected,final_fractional_cfo\n");
+    for (index = 0U; index < kept_count; ++index) {
+        const uint32_t start = peaks[index].index;
+        const int selected = coherence[index] >= coherence_cut;
+        uint32_t frame_id = 0U;
+        uint32_t j;
+        double re = 0.0;
+        double im = 0.0;
+        double magnitude;
+        for (j = 0U; j < frame_count; ++j) {
+            if (ranked[j].index == start) {
+                frame_id = j + 1U;
+                break;
+            }
+        }
+        for (j = 0U; j < cp_samples; ++j) {
+            const wrj_cf32_t a = iq[start + j];
+            const wrj_cf32_t b = iq[start + j + nfft];
+            re += (double)a.re * b.re + (double)a.im * b.im;
+            im += (double)a.re * b.im - (double)a.im * b.re;
+        }
+        magnitude = hypot(re, im);
+        selected_count += (uint32_t)selected;
+        fprintf(file, "%u,%u,%.12g,%.12g,%.12g,%.12g,%.12g,%.12g,%d,%.12g\n",
+                frame_id, start, atan2(im, re) * fs / (2.0 * WRJ_PI * nfft),
+                re, im, magnitude, (double)coherence[index],
+                selected ? (double)coherence[index] * coherence[index] : 0.0,
+                selected, (double)fractional_cfo_per_sample * fs);
+    }
+    fclose(file);
+    if (snprintf(summary_path, sizeof(summary_path), "%s.summary.csv", path) <
+        (int)sizeof(summary_path)) {
+        FILE *summary = fopen(summary_path, "w");
+        if (summary != NULL) {
+            fprintf(summary, "candidate_count,separated_count,kept_count,selected_count,"
+                             "peak_threshold,coherence_threshold,final_fractional_cfo,nfft,cp,fs_hz\n");
+            fprintf(summary, "%u,%u,%u,%u,%.12g,%.12g,%.12g,%u,%u,%.12g\n",
+                    candidate_count, separated_count, kept_count, selected_count,
+                    (double)peak_threshold, (double)coherence_cut,
+                    (double)fractional_cfo_per_sample * fs, nfft, cp_samples, fs);
+            fclose(summary);
+        }
+    }
+    free(ranked);
+}
+
 static wrj_status_t m3_cp_metric(const wrj_cf32_t *iq, uint32_t count,
                                  uint32_t nfft, uint32_t cp_samples,
                                  float *metric, uint32_t *metric_count)
@@ -259,6 +349,10 @@ wrj_status_t m3_cp_synchronize(const wrj_cf32_t *iq, uint32_t count,
         }
         result->fractional_cfo_hz = (float)(atan2(phase_im, phase_re) /
             (2.0 * WRJ_PI * (double)nfft));
+        m3_write_cp_fusion_debug(iq, nfft, cp_samples, max_frames,
+                                 workspace->peak_selected, workspace->scratch,
+                                 candidate_count, selected_count, kept_count,
+                                 threshold, coherence_cut, result->fractional_cfo_hz);
     }
     M3_PERF_STOP(M3_PERF_FRACTIONAL_CFO, fractional_timer);
 

@@ -24,3 +24,7 @@ RemoteID005 remained successfully parsed with four CRC24-valid distinct PDUs. Re
 ## Current status
 
 The A1–A4 work is documented as validated on the recorded optimization revision. This cleanup does not alter `src/module3/` or `src/module4/`. Current checkout and working-tree state are recorded in [PROJECT_CLEANUP.md](PROJECT_CLEANUP.md); do not infer that the archived ARM timing comparison was rerun on the current checkout.
+
+## Current Windows Release benchmark
+
+On 2026-09-28, the current `main` revision `043934a` was freshly configured as MinGW Release `-O2 -DNDEBUG`, with `WRJ_ENABLE_PROFILING=OFF`; CTest passed 1/1. The 11 standard cases were each timed three times. A temporary entry-point timer measured `m3_run`/`m4_run`; it was removed before rebuilding the final binary. Module3 remained `ok` on 11/11 cases. Mean Module3 time ranged from 252.926 ms (DroneID013) to 6269.468 ms (Control004); mean Module4 time ranged from 0.012 ms (RemoteID028 CRC short-circuit) to 141.683 ms (RemoteID005). Full per-case timing and parse outcomes are in [the benchmark report](../build-pc/windows/latest/performance/performance_report.md) and [CSV](../build-pc/windows/latest/performance/performance_summary.csv). These are PC timing results, not accuracy claims.

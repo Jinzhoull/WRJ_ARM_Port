@@ -55,26 +55,22 @@ DroneID frame grid; add truly independent byte/PDU references and multiple-SNR
 regression. AArch64 remains a separate unvalidated target. Do not compare C
 bytes against MATLAB synthetic harness records.
 
-## Current Windows Release benchmark
+## Final Windows Release rerun — 2026-09-28
 
-The 2026-09-28 Windows Release run used fresh MinGW `-O2 -DNDEBUG`, profiling off, and the same 11 cases as the Module3 benchmark. Module4 reported **1 complete parse, 9 partial parses, and 1 CRC failure**. RemoteID005 remained complete with four CRC24-valid PDUs, UAS ID `UAS000185`, and the same location/flight fields as the archived result. The four Wideband Module4 result summaries matched their archived counterparts. Stage timings and each case's parse state are recorded in [the performance report](../build-pc/windows/latest/performance/performance_report.md); `partial_parse` remains a partial result, not a protocol decode success.
+Built from HEAD `d28142d` with the pre-existing working-tree state present at the start of validation; no source files were edited during the run. Configuration: Release, `-O2 -DNDEBUG`, profiling OFF; CTest passed 1/1. All 11 candidates completed three runs (33/33 process exits were successful). Latest raw outputs are in `build-pc/windows/latest/parity-validation/<candidate>/`.
 
-## Fresh correctness rerun: HEAD `043934a`
+| Signal | Protocol | Recovered bytes | Packet count | Field count | CRC result | CRC-valid number | Final status |
+|---|---|---:|---:|---:|---|---:|---|
+| Autel Control009 | Autel_Control_CP_Hop | 96 | 20 | 2 | Not verified | 0 | PARTIAL |
+| Autel WB001 | Autel_Wideband_CP | 96 | 20 | 2 | Not verified | 0 | PARTIAL |
+| Autel WB012 | Autel_Wideband_CP | 96 | 20 | 2 | Not verified | 0 | PARTIAL |
+| Autel WB015 | Autel_Wideband_CP | 96 | 20 | 2 | Not verified | 0 | PARTIAL |
+| DJI Control004 | DJI_Control_Template_Mismatch_Blind_CP | 248 | 8 | 2 | Not verified | 0 | PARTIAL |
+| DJI DroneID013 | DJI_DroneID_ZC_CP | 96 | 9 | 2 | Not verified | 0 | PARTIAL |
+| DJI DroneID022 | DJI_DroneID_ZC_CP | 96 | 14 | 2 | Not verified | 0 | PARTIAL |
+| DJI WB018 | DJI_Wideband_CP | 96 | 20 | 2 | Not verified | 0 | PARTIAL |
+| RemoteID005 | RemoteID_BLE_GFSK | 39 | 4 | 7 | CRC24 PASS | 4 | COMPLETE |
+| RemoteID028 | RemoteID_BLE_GFSK | 0 | 0 | 0 | No CRC24-valid PDU | 0 | RECOVERY FAILED |
+| Unknown005 | Unknown_Blind_Repetition | 248 | 8 | 2 | Not verified | 0 | PARTIAL |
 
-Date: 2026-09-28. The same 11 candidate IQ files were rerun with Release `-O2 -DNDEBUG`, profiling off; CTest passed 1/1. Current raw C outputs are under `build-pc/windows/latest/parity-validation/<candidate>/`.
-
-| Signal | Recovered bytes | CRC-valid PDU count | Packet count | Field count | Result |
-|---|---:|---:|---:|---:|---|
-| Autel Control009 | 96 | 0 | 20 | 2 | partial |
-| Autel WB001 | 96 | 0 | 20 | 2 | partial |
-| Autel WB012 | 96 | 0 | 20 | 2 | partial |
-| Autel WB015 | 96 | 0 | 20 | 2 | partial |
-| DJI Control004 | 248 | 0 | 8 | 2 | partial |
-| DJI DroneID013 | 96 | 0 | 10 | 2 | partial |
-| DJI DroneID022 | 96 | 0 | 14 | 2 | partial |
-| DJI WB018 | 96 | 0 | 20 | 2 | partial |
-| RemoteID005 | 39 | 4 | 4 | 7 | complete |
-| RemoteID028 | 0 | 0 | 0 | 0 | failed (`crc_failed`) |
-| Unknown005 | 248 | 0 | 8 | 2 | partial |
-
-RemoteID005's independent MATLAB `candidate_iq` field comparison reports `match`. RemoteID028's Module3 synchronization status is `ok`, but Module4 recovered no bytes and found no valid CRC24 PDU; its current end-to-end parse state is therefore `crc_failed`, not complete. The other nine outcomes remain `partial_parse`, not successful full protocol parses.
+Summary: **1 COMPLETE, 9 PARTIAL, 1 RECOVERY FAILED**. RemoteID005 remains `UAS000185` with latitude `31.2260243`, longitude `121.4682469`, altitude `131.0 m`, speed `2.25 m/s`, and heading `117.0°`. RemoteID028's Module3 status is `ok`, but Module4 still produced no bytes or CRC24-valid PDU, so its actual final state remains `RECOVERY FAILED` (`crc_failed`). `PARTIAL` observations are not complete protocol decodes.

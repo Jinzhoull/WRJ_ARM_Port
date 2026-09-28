@@ -389,7 +389,8 @@ wrj_status_t m3_run(const wrj_candidate_t *candidate, const wrj_cf32_t *iq,
     memcpy(workspace->baseband, workspace->compensated,
            sizeof(*workspace->baseband) * (size_t)count);
     M3_PERF_START(stage_timer);
-    if (profile == WRJ_PROFILE_CONTROL_BURST) {
+    if (profile == WRJ_PROFILE_CONTROL_BURST || profile == WRJ_PROFILE_AUTEL_CONTROL_CP ||
+        profile == WRJ_PROFILE_DRONEID_ZC || profile == WRJ_PROFILE_UNKNOWN) {
         status = m3_control_bandlimit_fft(workspace->compensated, count,
                                           candidate->sample_rate_hz, candidate->bandwidth_hz);
     } else {
