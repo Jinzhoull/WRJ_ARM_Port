@@ -45,10 +45,13 @@ static void m3_boxcar_same(const float *input, uint32_t count, uint32_t width, f
     uint32_t index;
     const int32_t half = (int32_t)(width / 2U);
     double rolling = 0.0;
+    for (index = 0U; index < count && index <= (uint32_t)half; ++index) {
+        rolling += input[index];
+    }
     for (index = 0U; index < count; ++index) {
         const int32_t add = (int32_t)index + half;
         const int32_t remove = (int32_t)index - half - 1;
-        if (add >= 0 && add < (int32_t)count) {
+        if (index > 0U && add >= 0 && add < (int32_t)count) {
             rolling += input[add];
         }
         if (remove >= 0 && remove < (int32_t)count) {
