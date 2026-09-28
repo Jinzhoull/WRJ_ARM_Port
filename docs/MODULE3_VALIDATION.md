@@ -6,18 +6,26 @@ Wideband acceptance: profile/status exact, frame length/count exact, first start
 
 | Candidate | Result | C / MATLAB profile | C / MATLAB status | Spectral delta (Hz) | Total CFO delta (Hz) | Confidence delta | Length C/M | Count C/M | Starts <=1 sample | First start error |
 |---|---:|---|---|---:|---:|---:|---:|---:|---:|---:|
-| sim_autel_control_009_M005 | PASS | Autel_Control_CP_Hop / Autel_Control_CP_Hop | ok / ok | 621.812 | 663.836 | -0.004558 | 1152 / 1152 | 20 / 20 | 18/20 | 0.0 |
+| sim_autel_control_009_M005 | PASS | Autel_Control_CP_Hop / Autel_Control_CP_Hop | ok / ok | -0.188 | 665.336 | -0.004558 | 1152 / 1152 | 20 / 20 | 18/20 | 0.0 |
 | sim_autel_wideband_001_M001 | WARN | Autel_Wideband_CP / Autel_Wideband_CP | ok / ok | 0.000 | 0.896 | -0.001316 | 1152 / 1152 | 20 / 20 | 19/20 | 0.0 |
 | sim_autel_wideband_012_M001 | PASS | Autel_Wideband_CP / Autel_Wideband_CP | ok / ok | 0.000 | 1.091 | -0.000737 | 1120 / 1120 | 20 / 20 | 20/20 | 0.0 |
 | sim_autel_wideband_015_M001 | PASS | Autel_Wideband_CP / Autel_Wideband_CP | ok / ok | -0.250 | -3.958 | -0.002563 | 576 / 576 | 20 / 20 | 20/20 | 0.0 |
-| sim_dji_control_004_M001 | PASS | DJI_Control_Template_Mismatch_Blind_CP / DJI_Control_Template_Mismatch_Blind_CP | ok / ok | 0.000 | 3769.563 | -0.003760 | 544 / 544 | 20 / 20 | 16/20 | 0.0 |
-| sim_dji_droneid_013_M001 | WARN | DJI_DroneID_ZC_CP / DJI_DroneID_ZC_CP | ok / ok | 50041.852 | 60019.878 | 0.084070 | 19760 / 19760 | 9 / 5 | 0/9 | 1591.0 |
-| sim_dji_droneid_022_M001 | WARN | DJI_DroneID_ZC_CP / DJI_DroneID_ZC_CP | ok / low_confidence | 768.562 | 153.339 | 0.131072 | 19760 / 19760 | 14 / 6 | 0/14 | 159510.0 |
+| sim_dji_control_004_M001 | PASS | DJI_Control_Template_Mismatch_Blind_CP / DJI_Control_Template_Mismatch_Blind_CP | ok / ok | 0.000 | 338.751 | -0.000238 | 544 / 544 | 20 / 20 | 20/20 | 0.0 |
+| sim_dji_droneid_013_M001 | WARN | DJI_DroneID_ZC_CP / DJI_DroneID_ZC_CP | ok / ok | 0.039 | -64.786 | 0.085354 | 19760 / 19760 | 10 / 5 | 0/10 | 13397.0 |
+| sim_dji_droneid_022_M001 | WARN | DJI_DroneID_ZC_CP / DJI_DroneID_ZC_CP | ok / low_confidence | 0.062 | 153.277 | 0.114688 | 19760 / 19760 | 14 / 6 | 0/14 | 167783.0 |
 | sim_dji_wideband_018_M001 | WARN | DJI_Wideband_CP / DJI_Wideband_CP | ok / ok | 0.000 | -1.183 | -0.005437 | 2208 / 2208 | 20 / 20 | 19/20 | 0.0 |
-| sim_remoteid_ble_005_M001 | WARN | RemoteID_BLE_GFSK / RemoteID_BLE_GFSK | ok / ok | 693.062 | 693.062 | 0.001322 | 13917 / 25809 | 16 / 12 | 1/16 | 17817.0 |
-| sim_remoteid_ble_028_M001 | WARN | RemoteID_BLE_GFSK / RemoteID_BLE_GFSK | ok / ok | -447.688 | -91394.149 | -0.017320 | 16861 / 11656 | 9 / 5 | 2/9 | 16862.0 |
+| sim_remoteid_ble_005_M001 | WARN | RemoteID_BLE_GFSK / RemoteID_BLE_GFSK | ok / ok | 0.062 | 0.062 | 0.001322 | 13917 / 25809 | 16 / 12 | 1/16 | 17817.0 |
+| sim_remoteid_ble_028_M001 | WARN | RemoteID_BLE_GFSK / RemoteID_BLE_GFSK | ok / ok | -0.062 | -28446.524 | -0.021148 | 16860 / 11656 | 9 / 5 | 2/9 | 16861.0 |
 | sim_unknown_uav_005_M003 | WARN | Unknown_Blind_Repetition / Unknown_Blind_Repetition | ok / ok | 0.000 | 127.542 | -0.005962 | 2176 / 2176 | 20 / 20 | 16/20 | 2811.0 |
 
 Summary: **4 PASS, 7 WARN, 0 FAIL** across 11 cases.
 
 `WARN` means the C path runs and emits compatible diagnostics, but numerical parity with the current MATLAB profile is not yet within the provisional non-wideband tolerance. It is not converted into a pass by relaxing the production sync threshold.
+
+## Fresh parity rerun: HEAD `043934a`
+
+Date: 2026-09-28. The current Release executable was verified as MinGW `-O2 -DNDEBUG`, `WRJ_ENABLE_PROFILING=OFF` (SHA-256 `10861C6AD4CF7BF9E88422597C7F1C73C162023D111C1746866DB8A463EA8D73`); CTest passed 1/1. All 11 candidates were rerun against the existing MATLAB summary/frame tables. Raw outputs are in `build-pc/windows/latest/parity-validation/<candidate>/`; no trial/baseline/experiment directory was created.
+
+Key total-CFO deltas (C minus MATLAB): DroneID013 **−64.786 Hz** (previous report: +60019.878 Hz), RemoteID005 **+0.062 Hz** (previous report: +693.062 Hz), and DJI Control004 **+338.751 Hz** (previous report: +3769.563 Hz). RemoteID028 remains −28446.524 Hz. The regenerated parity summary is **4 PASS, 7 WARN, 0 FAIL**; frame-start errors and C/M frame counts are listed per candidate above. In particular, DroneID013 has 10 C frames versus 5 MATLAB frames and a 13397-sample first-start error: the CFO alignment improved, but its frame grid is not MATLAB-aligned. This is a parity report, not a truth-based accuracy metric.
+
+The separate three-run Windows timing benchmark for the same Release configuration remains documented in [MODULE3_OPTIMIZATION.md](MODULE3_OPTIMIZATION.md) and [performance_report.md](../build-pc/windows/latest/performance/performance_report.md).
