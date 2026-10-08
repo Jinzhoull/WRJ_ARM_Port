@@ -1,0 +1,27 @@
+{
+  "coreCases": 12,
+  "frontendComparisonsPassed": 36,
+  "frontendComparisons": 36,
+  "module3FastParityPassed": 12,
+  "hostWallSeconds": 53.68990039941855,
+  "tolerances": {
+    "CFOAbsHz": 1.0,
+    "CFORel": 1e-06,
+    "SFOAbsPpm": 0.1,
+    "frameStartSamples": 0,
+    "frameConfidenceAbs": 0.0001,
+    "IQRMSE": 0.0001,
+    "IQMaxError": 0.001,
+    "IQMinCorrelation": 0.999999
+  },
+  "algorithmInput": "M2 capture-domain CF32 + whitelisted acquisition handoff only",
+  "M3Deep": "FUNCTIONAL_RECEIVED_IQ_RETRY; VALIDATED_IN_HOST_CHAIN",
+  "ARMExecuted": false,
+  "probeSource": "REUSED_LAST_C_M3_RUN",
+  "cachedPDUs": 7,
+  "cachedOriginalCRCIndependent": true,
+  "sourceFingerprints": [
+    "415733f945962206e5224f8f95ce8feb99a866b063c96608ac1bfe036a348ad6"
+  ],
+  "probeExecutableSHA256": "8b3c1d0cdf965fb9b5d3d4dc6b4e96341ae134d76b4d8a47a5d9e4f6174fc7b9"
+}

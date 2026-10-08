@@ -1,0 +1,4 @@
+candidate,step,state,result,details,CRCCount,seconds
+sim_remoteid_ble_027_M001,0,FIRST_PASS_CHECK,PASS,"Independent received evidence gate",5,0
+sim_remoteid_ble_027_M001,1,REMOTEID_MESSAGE_COMPLETION,BUDGETED,"Original CRC and unchanged received identity",5,0
+sim_remoteid_ble_027_M001,2,SUCCESS,PASS,"FIRST_PASS_VALID",5,0

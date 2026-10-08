@@ -1,0 +1,1 @@
+candidate,source,index,protocol,start0,nfft,cp,active,CFOHz,rotation,bytesHex,byteCount,receivedCRC,computedCRC,originalCRCPresent,crcValid,semanticComplete,phyMode,byteSource,fieldCount,repetitionCombined,TxAdd,AdvA,messageType,rawBits,receivedCRCBits

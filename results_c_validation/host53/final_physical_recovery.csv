@@ -1,0 +1,525 @@
+candidate,protocol,frame,insideCrop,receivedBytesMatch,completePhysicalRecovered
+sim_dji_control_004_M001,DJI Control,1,1,1,1
+sim_dji_control_004_M001,DJI Control,2,1,0,0
+sim_dji_control_004_M001,DJI Control,3,1,0,0
+sim_dji_control_004_M001,DJI Control,4,1,0,0
+sim_dji_control_004_M001,DJI Control,5,1,0,0
+sim_dji_control_004_M001,DJI Control,6,1,0,0
+sim_dji_control_004_M001,DJI Control,7,1,0,0
+sim_dji_control_004_M001,DJI Control,8,1,0,0
+sim_dji_control_004_M001,DJI Control,9,1,0,0
+sim_dji_control_017_M001,DJI Control,1,1,1,1
+sim_dji_control_017_M001,DJI Control,2,1,0,0
+sim_dji_control_017_M001,DJI Control,3,1,0,0
+sim_dji_control_017_M001,DJI Control,4,1,0,0
+sim_dji_control_017_M001,DJI Control,5,1,0,0
+sim_dji_control_017_M001,DJI Control,6,1,0,0
+sim_dji_control_017_M001,DJI Control,7,0,0,0
+sim_dji_control_017_M001,DJI Control,8,0,0,0
+sim_dji_control_021_M001,DJI Control,1,1,1,1
+sim_dji_control_021_M001,DJI Control,2,1,0,0
+sim_dji_control_021_M001,DJI Control,3,1,0,0
+sim_dji_control_021_M001,DJI Control,4,1,0,0
+sim_dji_control_021_M001,DJI Control,5,1,0,0
+sim_dji_control_021_M001,DJI Control,6,1,0,0
+sim_dji_control_021_M001,DJI Control,7,1,0,0
+sim_dji_control_022_M001,DJI Control,1,1,1,1
+sim_dji_control_022_M001,DJI Control,2,1,0,0
+sim_dji_control_022_M001,DJI Control,3,1,0,0
+sim_dji_control_022_M001,DJI Control,4,1,0,0
+sim_dji_control_022_M001,DJI Control,5,1,0,0
+sim_dji_control_022_M001,DJI Control,6,1,0,0
+sim_dji_control_022_M001,DJI Control,7,1,0,0
+sim_dji_control_029_M001,DJI Control,1,0,0,0
+sim_dji_control_029_M001,DJI Control,2,0,0,0
+sim_dji_control_029_M001,DJI Control,3,0,0,0
+sim_dji_control_029_M001,DJI Control,4,1,1,1
+sim_dji_control_029_M001,DJI Control,5,1,0,0
+sim_dji_control_029_M001,DJI Control,6,1,0,0
+sim_dji_control_029_M001,DJI Control,7,1,0,0
+sim_dji_control_029_M001,DJI Control,8,1,0,0
+sim_dji_control_029_M001,DJI Control,9,1,0,0
+sim_dji_control_029_M001,DJI Control,10,1,0,0
+sim_dji_control_029_M001,DJI Control,11,1,0,0
+sim_dji_control_029_M001,DJI Control,12,1,0,0
+sim_dji_control_030_M002,DJI Control,1,0,0,0
+sim_dji_control_030_M002,DJI Control,2,0,0,0
+sim_dji_control_030_M002,DJI Control,3,1,1,1
+sim_dji_control_030_M002,DJI Control,4,1,0,0
+sim_dji_control_030_M002,DJI Control,5,1,0,0
+sim_dji_control_030_M002,DJI Control,6,1,0,0
+sim_dji_control_030_M002,DJI Control,7,0,0,0
+sim_dji_control_030_M002,DJI Control,8,0,0,0
+sim_dji_wideband_008_M006,DJI Wideband,1,1,0,0
+sim_dji_wideband_008_M006,DJI Wideband,2,1,0,0
+sim_dji_wideband_008_M006,DJI Wideband,3,1,0,0
+sim_dji_wideband_008_M006,DJI Wideband,4,1,0,0
+sim_dji_wideband_008_M006,DJI Wideband,5,1,0,0
+sim_dji_wideband_008_M006,DJI Wideband,6,1,0,0
+sim_dji_wideband_008_M006,DJI Wideband,7,1,0,0
+sim_dji_wideband_008_M006,DJI Wideband,8,1,0,0
+sim_dji_wideband_008_M006,DJI Wideband,9,1,0,0
+sim_dji_wideband_008_M006,DJI Wideband,10,1,0,0
+sim_dji_wideband_008_M006,DJI Wideband,11,1,0,0
+sim_dji_wideband_008_M006,DJI Wideband,12,1,0,0
+sim_dji_wideband_008_M006,DJI Wideband,13,1,0,0
+sim_dji_wideband_008_M006,DJI Wideband,14,1,0,0
+sim_dji_wideband_008_M006,DJI Wideband,15,1,0,0
+sim_dji_wideband_008_M006,DJI Wideband,16,1,0,0
+sim_dji_wideband_008_M006,DJI Wideband,17,1,0,0
+sim_dji_wideband_008_M006,DJI Wideband,18,1,0,0
+sim_dji_wideband_008_M006,DJI Wideband,19,1,0,0
+sim_dji_wideband_008_M006,DJI Wideband,20,1,0,0
+sim_dji_wideband_018_M001,DJI Wideband,1,1,0,0
+sim_dji_wideband_018_M001,DJI Wideband,2,1,0,0
+sim_dji_wideband_018_M001,DJI Wideband,3,1,0,0
+sim_dji_wideband_018_M001,DJI Wideband,4,1,0,0
+sim_dji_wideband_018_M001,DJI Wideband,5,1,0,0
+sim_dji_wideband_018_M001,DJI Wideband,6,1,0,0
+sim_dji_wideband_018_M001,DJI Wideband,7,1,0,0
+sim_dji_wideband_018_M001,DJI Wideband,8,1,0,0
+sim_dji_wideband_018_M001,DJI Wideband,9,1,0,0
+sim_dji_wideband_018_M001,DJI Wideband,10,1,0,0
+sim_dji_wideband_018_M001,DJI Wideband,11,1,0,0
+sim_dji_wideband_018_M001,DJI Wideband,12,1,0,0
+sim_dji_wideband_018_M001,DJI Wideband,13,1,0,0
+sim_dji_wideband_018_M001,DJI Wideband,14,1,0,0
+sim_dji_wideband_018_M001,DJI Wideband,15,1,0,0
+sim_dji_wideband_018_M001,DJI Wideband,16,1,1,1
+sim_dji_wideband_018_M001,DJI Wideband,17,1,0,0
+sim_dji_wideband_018_M001,DJI Wideband,18,1,0,0
+sim_dji_wideband_018_M001,DJI Wideband,19,1,1,1
+sim_dji_wideband_018_M001,DJI Wideband,20,1,0,0
+sim_dji_wideband_020_M001,DJI Wideband,1,1,0,0
+sim_dji_wideband_020_M001,DJI Wideband,2,1,0,0
+sim_dji_wideband_020_M001,DJI Wideband,3,1,0,0
+sim_dji_wideband_020_M001,DJI Wideband,4,1,0,0
+sim_dji_wideband_020_M001,DJI Wideband,5,1,0,0
+sim_dji_wideband_020_M001,DJI Wideband,6,1,0,0
+sim_dji_wideband_020_M001,DJI Wideband,7,1,0,0
+sim_dji_wideband_020_M001,DJI Wideband,8,1,0,0
+sim_dji_wideband_020_M001,DJI Wideband,9,1,0,0
+sim_dji_wideband_020_M001,DJI Wideband,10,1,0,0
+sim_dji_wideband_020_M001,DJI Wideband,11,1,1,1
+sim_dji_wideband_020_M001,DJI Wideband,12,1,0,0
+sim_dji_wideband_020_M001,DJI Wideband,13,1,0,0
+sim_dji_wideband_020_M001,DJI Wideband,14,1,0,0
+sim_dji_wideband_020_M001,DJI Wideband,15,1,0,0
+sim_dji_wideband_020_M001,DJI Wideband,16,1,0,0
+sim_dji_wideband_020_M001,DJI Wideband,17,1,0,0
+sim_dji_wideband_020_M001,DJI Wideband,18,1,0,0
+sim_dji_wideband_020_M001,DJI Wideband,19,1,0,0
+sim_dji_wideband_020_M001,DJI Wideband,20,1,1,1
+sim_dji_wideband_022_M002,DJI Wideband,1,1,0,0
+sim_dji_wideband_022_M002,DJI Wideband,2,1,0,0
+sim_dji_wideband_022_M002,DJI Wideband,3,1,0,0
+sim_dji_wideband_022_M002,DJI Wideband,4,1,0,0
+sim_dji_wideband_022_M002,DJI Wideband,5,1,0,0
+sim_dji_wideband_022_M002,DJI Wideband,6,1,0,0
+sim_dji_wideband_022_M002,DJI Wideband,7,1,0,0
+sim_dji_wideband_022_M002,DJI Wideband,8,1,0,0
+sim_dji_wideband_022_M002,DJI Wideband,9,1,0,0
+sim_dji_wideband_022_M002,DJI Wideband,10,1,0,0
+sim_dji_wideband_022_M002,DJI Wideband,11,1,0,0
+sim_dji_wideband_022_M002,DJI Wideband,12,1,0,0
+sim_dji_wideband_022_M002,DJI Wideband,13,1,0,0
+sim_dji_wideband_022_M002,DJI Wideband,14,1,0,0
+sim_dji_wideband_022_M002,DJI Wideband,15,1,0,0
+sim_dji_wideband_022_M002,DJI Wideband,16,1,0,0
+sim_dji_wideband_022_M002,DJI Wideband,17,1,0,0
+sim_dji_wideband_022_M002,DJI Wideband,18,1,0,0
+sim_dji_wideband_022_M002,DJI Wideband,19,1,0,0
+sim_dji_wideband_022_M002,DJI Wideband,20,1,0,0
+sim_dji_wideband_025_M001,DJI Wideband,1,1,0,0
+sim_dji_wideband_025_M001,DJI Wideband,2,1,0,0
+sim_dji_wideband_025_M001,DJI Wideband,3,1,0,0
+sim_dji_wideband_025_M001,DJI Wideband,4,1,0,0
+sim_dji_wideband_025_M001,DJI Wideband,5,1,0,0
+sim_dji_wideband_025_M001,DJI Wideband,6,1,0,0
+sim_dji_wideband_025_M001,DJI Wideband,7,1,0,0
+sim_dji_wideband_025_M001,DJI Wideband,8,1,0,0
+sim_dji_wideband_025_M001,DJI Wideband,9,1,0,0
+sim_dji_wideband_025_M001,DJI Wideband,10,1,0,0
+sim_dji_wideband_025_M001,DJI Wideband,11,1,0,0
+sim_dji_wideband_025_M001,DJI Wideband,12,1,0,0
+sim_dji_wideband_025_M001,DJI Wideband,13,1,0,0
+sim_dji_wideband_025_M001,DJI Wideband,14,1,0,0
+sim_dji_wideband_025_M001,DJI Wideband,15,1,0,0
+sim_dji_wideband_025_M001,DJI Wideband,16,1,0,0
+sim_dji_wideband_025_M001,DJI Wideband,17,1,0,0
+sim_dji_wideband_025_M001,DJI Wideband,18,1,0,0
+sim_dji_wideband_025_M001,DJI Wideband,19,1,0,0
+sim_dji_wideband_025_M001,DJI Wideband,20,1,0,0
+sim_dji_wideband_027_M001,DJI Wideband,1,1,1,1
+sim_dji_wideband_027_M001,DJI Wideband,2,1,0,0
+sim_dji_wideband_027_M001,DJI Wideband,3,1,0,0
+sim_dji_wideband_027_M001,DJI Wideband,4,1,0,0
+sim_dji_wideband_027_M001,DJI Wideband,5,1,0,0
+sim_dji_wideband_027_M001,DJI Wideband,6,1,0,0
+sim_dji_wideband_027_M001,DJI Wideband,7,1,0,0
+sim_dji_wideband_027_M001,DJI Wideband,8,1,0,0
+sim_dji_wideband_027_M001,DJI Wideband,9,1,0,0
+sim_dji_wideband_027_M001,DJI Wideband,10,1,0,0
+sim_dji_wideband_027_M001,DJI Wideband,11,1,0,0
+sim_dji_wideband_027_M001,DJI Wideband,12,1,0,0
+sim_dji_wideband_027_M001,DJI Wideband,13,1,0,0
+sim_dji_wideband_027_M001,DJI Wideband,14,1,0,0
+sim_dji_wideband_027_M001,DJI Wideband,15,1,0,0
+sim_dji_wideband_027_M001,DJI Wideband,16,1,0,0
+sim_dji_wideband_027_M001,DJI Wideband,17,1,0,0
+sim_dji_wideband_027_M001,DJI Wideband,18,1,0,0
+sim_dji_wideband_027_M001,DJI Wideband,19,1,0,0
+sim_dji_wideband_027_M001,DJI Wideband,20,1,0,0
+sim_dji_wideband_029_M001,DJI Wideband,1,1,0,0
+sim_dji_wideband_029_M001,DJI Wideband,2,1,0,0
+sim_dji_wideband_029_M001,DJI Wideband,3,1,0,0
+sim_dji_wideband_029_M001,DJI Wideband,4,1,0,0
+sim_dji_wideband_029_M001,DJI Wideband,5,1,0,0
+sim_dji_wideband_029_M001,DJI Wideband,6,1,1,1
+sim_dji_wideband_029_M001,DJI Wideband,7,1,0,0
+sim_dji_wideband_029_M001,DJI Wideband,8,1,0,0
+sim_dji_wideband_029_M001,DJI Wideband,9,1,0,0
+sim_dji_wideband_029_M001,DJI Wideband,10,1,0,0
+sim_dji_wideband_029_M001,DJI Wideband,11,1,1,1
+sim_dji_wideband_029_M001,DJI Wideband,12,1,0,0
+sim_dji_wideband_029_M001,DJI Wideband,13,1,0,0
+sim_dji_wideband_029_M001,DJI Wideband,14,1,0,0
+sim_dji_wideband_029_M001,DJI Wideband,15,1,0,0
+sim_dji_wideband_029_M001,DJI Wideband,16,1,0,0
+sim_dji_wideband_029_M001,DJI Wideband,17,1,0,0
+sim_dji_wideband_029_M001,DJI Wideband,18,1,0,0
+sim_dji_wideband_029_M001,DJI Wideband,19,1,0,0
+sim_dji_wideband_029_M001,DJI Wideband,20,1,0,0
+sim_dji_droneid_010_M001,DJI DroneID,1,0,0,0
+sim_dji_droneid_013_M001,DJI DroneID,1,0,1,0
+sim_dji_droneid_014_M001,DJI DroneID,1,0,1,0
+sim_dji_droneid_019_M005,DJI DroneID,1,0,0,0
+sim_dji_droneid_022_M001,DJI DroneID,1,0,1,0
+sim_dji_droneid_027_M001,DJI DroneID,1,1,1,1
+sim_autel_control_010_M001,Autel Control,1,1,0,0
+sim_autel_control_010_M001,Autel Control,2,1,1,1
+sim_autel_control_010_M001,Autel Control,3,1,0,0
+sim_autel_control_010_M001,Autel Control,4,1,0,0
+sim_autel_control_010_M001,Autel Control,5,1,0,0
+sim_autel_control_010_M001,Autel Control,6,1,0,0
+sim_autel_control_019_M001,Autel Control,1,0,0,0
+sim_autel_control_019_M001,Autel Control,2,0,0,0
+sim_autel_control_019_M001,Autel Control,3,1,0,0
+sim_autel_control_019_M001,Autel Control,4,1,1,1
+sim_autel_control_019_M001,Autel Control,5,1,1,1
+sim_autel_control_020_M001,Autel Control,1,0,0,0
+sim_autel_control_020_M001,Autel Control,2,1,1,1
+sim_autel_control_020_M001,Autel Control,3,1,0,0
+sim_autel_wideband_001_M001,Autel Wideband,1,1,0,0
+sim_autel_wideband_001_M001,Autel Wideband,2,1,0,0
+sim_autel_wideband_001_M001,Autel Wideband,3,1,0,0
+sim_autel_wideband_001_M001,Autel Wideband,4,1,0,0
+sim_autel_wideband_001_M001,Autel Wideband,5,1,0,0
+sim_autel_wideband_001_M001,Autel Wideband,6,1,0,0
+sim_autel_wideband_001_M001,Autel Wideband,7,1,0,0
+sim_autel_wideband_001_M001,Autel Wideband,8,1,0,0
+sim_autel_wideband_001_M001,Autel Wideband,9,1,0,0
+sim_autel_wideband_001_M001,Autel Wideband,10,1,0,0
+sim_autel_wideband_001_M001,Autel Wideband,11,1,0,0
+sim_autel_wideband_001_M001,Autel Wideband,12,1,0,0
+sim_autel_wideband_001_M001,Autel Wideband,13,1,0,0
+sim_autel_wideband_001_M001,Autel Wideband,14,1,0,0
+sim_autel_wideband_001_M001,Autel Wideband,15,1,0,0
+sim_autel_wideband_001_M001,Autel Wideband,16,1,0,0
+sim_autel_wideband_001_M001,Autel Wideband,17,1,0,0
+sim_autel_wideband_006_M001,Autel Wideband,1,1,0,0
+sim_autel_wideband_006_M001,Autel Wideband,2,1,0,0
+sim_autel_wideband_006_M001,Autel Wideband,3,1,0,0
+sim_autel_wideband_006_M001,Autel Wideband,4,1,0,0
+sim_autel_wideband_006_M001,Autel Wideband,5,1,0,0
+sim_autel_wideband_006_M001,Autel Wideband,6,1,0,0
+sim_autel_wideband_006_M001,Autel Wideband,7,1,0,0
+sim_autel_wideband_006_M001,Autel Wideband,8,1,0,0
+sim_autel_wideband_006_M001,Autel Wideband,9,1,0,0
+sim_autel_wideband_006_M001,Autel Wideband,10,1,0,0
+sim_autel_wideband_006_M001,Autel Wideband,11,1,0,0
+sim_autel_wideband_006_M001,Autel Wideband,12,1,0,0
+sim_autel_wideband_006_M001,Autel Wideband,13,1,0,0
+sim_autel_wideband_006_M001,Autel Wideband,14,1,0,0
+sim_autel_wideband_006_M001,Autel Wideband,15,1,0,0
+sim_autel_wideband_006_M001,Autel Wideband,16,1,0,0
+sim_autel_wideband_010_M001,Autel Wideband,1,1,0,0
+sim_autel_wideband_010_M001,Autel Wideband,2,1,0,0
+sim_autel_wideband_010_M001,Autel Wideband,3,1,1,1
+sim_autel_wideband_010_M001,Autel Wideband,4,1,0,0
+sim_autel_wideband_010_M001,Autel Wideband,5,1,0,0
+sim_autel_wideband_010_M001,Autel Wideband,6,1,0,0
+sim_autel_wideband_010_M001,Autel Wideband,7,1,1,1
+sim_autel_wideband_010_M001,Autel Wideband,8,1,0,0
+sim_autel_wideband_010_M001,Autel Wideband,9,1,0,0
+sim_autel_wideband_010_M001,Autel Wideband,10,1,0,0
+sim_autel_wideband_010_M001,Autel Wideband,11,1,0,0
+sim_autel_wideband_010_M001,Autel Wideband,12,1,0,0
+sim_autel_wideband_010_M001,Autel Wideband,13,1,0,0
+sim_autel_wideband_010_M001,Autel Wideband,14,1,0,0
+sim_autel_wideband_010_M001,Autel Wideband,15,1,0,0
+sim_autel_wideband_010_M001,Autel Wideband,16,1,0,0
+sim_autel_wideband_010_M001,Autel Wideband,17,1,0,0
+sim_autel_wideband_010_M001,Autel Wideband,18,1,0,0
+sim_autel_wideband_012_M001,Autel Wideband,1,1,0,0
+sim_autel_wideband_012_M001,Autel Wideband,2,1,0,0
+sim_autel_wideband_012_M001,Autel Wideband,3,1,0,0
+sim_autel_wideband_012_M001,Autel Wideband,4,1,0,0
+sim_autel_wideband_012_M001,Autel Wideband,5,1,0,0
+sim_autel_wideband_012_M001,Autel Wideband,6,1,0,0
+sim_autel_wideband_012_M001,Autel Wideband,7,1,0,0
+sim_autel_wideband_012_M001,Autel Wideband,8,1,0,0
+sim_autel_wideband_012_M001,Autel Wideband,9,1,1,1
+sim_autel_wideband_012_M001,Autel Wideband,10,1,0,0
+sim_autel_wideband_012_M001,Autel Wideband,11,1,0,0
+sim_autel_wideband_012_M001,Autel Wideband,12,1,0,0
+sim_autel_wideband_012_M001,Autel Wideband,13,1,0,0
+sim_autel_wideband_012_M001,Autel Wideband,14,1,1,1
+sim_autel_wideband_012_M001,Autel Wideband,15,1,0,0
+sim_autel_wideband_014_M002,Autel Wideband,1,1,0,0
+sim_autel_wideband_014_M002,Autel Wideband,2,1,0,0
+sim_autel_wideband_014_M002,Autel Wideband,3,1,0,0
+sim_autel_wideband_014_M002,Autel Wideband,4,1,0,0
+sim_autel_wideband_014_M002,Autel Wideband,5,1,0,0
+sim_autel_wideband_014_M002,Autel Wideband,6,1,0,0
+sim_autel_wideband_014_M002,Autel Wideband,7,1,0,0
+sim_autel_wideband_014_M002,Autel Wideband,8,1,0,0
+sim_autel_wideband_014_M002,Autel Wideband,9,1,0,0
+sim_autel_wideband_014_M002,Autel Wideband,10,1,0,0
+sim_autel_wideband_014_M002,Autel Wideband,11,1,0,0
+sim_autel_wideband_014_M002,Autel Wideband,12,1,0,0
+sim_autel_wideband_014_M002,Autel Wideband,13,1,0,0
+sim_autel_wideband_014_M002,Autel Wideband,14,1,0,0
+sim_autel_wideband_014_M002,Autel Wideband,15,1,0,0
+sim_autel_wideband_014_M002,Autel Wideband,16,1,0,0
+sim_autel_wideband_014_M002,Autel Wideband,17,1,0,0
+sim_autel_wideband_014_M002,Autel Wideband,18,1,0,0
+sim_autel_wideband_014_M002,Autel Wideband,19,1,0,0
+sim_autel_wideband_014_M002,Autel Wideband,20,1,0,0
+sim_autel_wideband_015_M001,Autel Wideband,1,1,0,0
+sim_autel_wideband_015_M001,Autel Wideband,2,1,0,0
+sim_autel_wideband_015_M001,Autel Wideband,3,1,0,0
+sim_autel_wideband_015_M001,Autel Wideband,4,1,0,0
+sim_autel_wideband_015_M001,Autel Wideband,5,1,0,0
+sim_autel_wideband_015_M001,Autel Wideband,6,1,0,0
+sim_autel_wideband_015_M001,Autel Wideband,7,1,0,0
+sim_autel_wideband_015_M001,Autel Wideband,8,1,0,0
+sim_autel_wideband_015_M001,Autel Wideband,9,1,0,0
+sim_autel_wideband_015_M001,Autel Wideband,10,1,0,0
+sim_autel_wideband_015_M001,Autel Wideband,11,1,0,0
+sim_autel_wideband_015_M001,Autel Wideband,12,1,0,0
+sim_autel_wideband_015_M001,Autel Wideband,13,1,0,0
+sim_autel_wideband_015_M001,Autel Wideband,14,1,0,0
+sim_autel_wideband_015_M001,Autel Wideband,15,1,0,0
+sim_autel_wideband_015_M001,Autel Wideband,16,1,0,0
+sim_autel_wideband_015_M001,Autel Wideband,17,1,0,0
+sim_autel_wideband_015_M001,Autel Wideband,18,1,0,0
+sim_autel_wideband_015_M001,Autel Wideband,19,1,0,0
+sim_autel_wideband_015_M001,Autel Wideband,20,1,0,0
+sim_autel_wideband_017_M001,Autel Wideband,1,1,0,0
+sim_autel_wideband_017_M001,Autel Wideband,2,1,1,1
+sim_autel_wideband_017_M001,Autel Wideband,3,1,0,0
+sim_autel_wideband_017_M001,Autel Wideband,4,1,0,0
+sim_autel_wideband_017_M001,Autel Wideband,5,1,0,0
+sim_autel_wideband_017_M001,Autel Wideband,6,1,0,0
+sim_autel_wideband_017_M001,Autel Wideband,7,1,0,0
+sim_autel_wideband_017_M001,Autel Wideband,8,1,0,0
+sim_autel_wideband_017_M001,Autel Wideband,9,1,0,0
+sim_autel_wideband_017_M001,Autel Wideband,10,1,0,0
+sim_autel_wideband_017_M001,Autel Wideband,11,1,0,0
+sim_autel_wideband_017_M001,Autel Wideband,12,1,0,0
+sim_autel_wideband_017_M001,Autel Wideband,13,1,0,0
+sim_autel_wideband_017_M001,Autel Wideband,14,1,0,0
+sim_autel_wideband_017_M001,Autel Wideband,15,1,0,0
+sim_autel_wideband_017_M001,Autel Wideband,16,1,0,0
+sim_autel_wideband_017_M001,Autel Wideband,17,1,0,0
+sim_autel_wideband_017_M001,Autel Wideband,18,1,0,0
+sim_autel_wideband_017_M001,Autel Wideband,19,1,0,0
+sim_autel_wideband_017_M001,Autel Wideband,20,1,0,0
+sim_remoteid_ble_005_M001,RemoteID,1,1,1,1
+sim_remoteid_ble_005_M001,RemoteID,2,1,1,1
+sim_remoteid_ble_005_M001,RemoteID,3,1,0,0
+sim_remoteid_ble_005_M001,RemoteID,4,1,1,1
+sim_remoteid_ble_005_M001,RemoteID,5,1,1,1
+sim_remoteid_ble_005_M001,RemoteID,6,1,1,1
+sim_remoteid_ble_005_M001,RemoteID,7,1,1,1
+sim_remoteid_ble_005_M001,RemoteID,8,1,1,1
+sim_remoteid_ble_010_M001,RemoteID,1,1,1,1
+sim_remoteid_ble_010_M001,RemoteID,2,1,1,1
+sim_remoteid_ble_010_M001,RemoteID,3,1,0,0
+sim_remoteid_ble_010_M001,RemoteID,4,1,1,1
+sim_remoteid_ble_010_M001,RemoteID,5,1,0,0
+sim_remoteid_ble_010_M001,RemoteID,6,1,1,1
+sim_remoteid_ble_010_M001,RemoteID,7,0,0,0
+sim_remoteid_ble_021_M002,RemoteID,1,1,1,1
+sim_remoteid_ble_021_M002,RemoteID,2,1,1,1
+sim_remoteid_ble_021_M002,RemoteID,3,1,1,1
+sim_remoteid_ble_021_M002,RemoteID,4,1,1,1
+sim_remoteid_ble_021_M002,RemoteID,5,1,1,1
+sim_remoteid_ble_026_M001,RemoteID,1,1,1,1
+sim_remoteid_ble_026_M001,RemoteID,2,1,1,1
+sim_remoteid_ble_026_M001,RemoteID,3,1,1,1
+sim_remoteid_ble_026_M001,RemoteID,4,1,1,1
+sim_remoteid_ble_026_M001,RemoteID,5,1,1,1
+sim_remoteid_ble_026_M001,RemoteID,6,1,1,1
+sim_remoteid_ble_026_M001,RemoteID,7,1,1,1
+sim_remoteid_ble_026_M001,RemoteID,8,1,1,1
+sim_remoteid_ble_027_M001,RemoteID,1,1,1,1
+sim_remoteid_ble_027_M001,RemoteID,2,1,1,1
+sim_remoteid_ble_027_M001,RemoteID,3,1,1,1
+sim_remoteid_ble_027_M001,RemoteID,4,1,1,1
+sim_remoteid_ble_027_M001,RemoteID,5,1,1,1
+sim_remoteid_ble_028_M001,RemoteID,1,0,0,0
+sim_remoteid_ble_028_M001,RemoteID,2,0,0,0
+sim_remoteid_ble_028_M001,RemoteID,3,1,0,0
+sim_remoteid_ble_028_M001,RemoteID,4,1,1,1
+sim_remoteid_ble_028_M001,RemoteID,5,1,1,1
+sim_remoteid_ble_028_M001,RemoteID,6,1,1,1
+sim_remoteid_ble_028_M001,RemoteID,7,1,1,1
+sim_remoteid_ble_028_M001,RemoteID,8,1,1,1
+sim_remoteid_ble_030_M002,RemoteID,1,1,1,1
+sim_remoteid_ble_030_M002,RemoteID,2,1,1,1
+sim_remoteid_ble_030_M002,RemoteID,3,1,1,1
+sim_remoteid_ble_030_M002,RemoteID,4,1,1,1
+sim_remoteid_ble_030_M002,RemoteID,5,1,1,1
+sim_remoteid_ble_030_M002,RemoteID,6,1,1,1
+sim_remoteid_ble_030_M002,RemoteID,7,1,1,1
+sim_remoteid_ble_030_M002,RemoteID,8,1,0,0
+sim_unknown_uav_001_M001,Unknown,1,1,0,0
+sim_unknown_uav_001_M001,Unknown,2,1,1,1
+sim_unknown_uav_001_M001,Unknown,3,1,0,0
+sim_unknown_uav_001_M001,Unknown,4,1,0,0
+sim_unknown_uav_001_M001,Unknown,5,1,0,0
+sim_unknown_uav_001_M001,Unknown,6,1,1,1
+sim_unknown_uav_001_M001,Unknown,7,1,0,0
+sim_unknown_uav_001_M001,Unknown,8,1,0,0
+sim_unknown_uav_001_M001,Unknown,9,1,0,0
+sim_unknown_uav_001_M001,Unknown,10,0,0,0
+sim_unknown_uav_001_M001,Unknown,11,0,0,0
+sim_unknown_uav_001_M001,Unknown,12,0,0,0
+sim_unknown_uav_002_M003,Unknown,1,1,1,1
+sim_unknown_uav_005_M003,Unknown,1,0,0,0
+sim_unknown_uav_005_M003,Unknown,2,0,0,0
+sim_unknown_uav_005_M003,Unknown,3,1,1,1
+sim_unknown_uav_005_M003,Unknown,4,1,1,1
+sim_unknown_uav_005_M003,Unknown,5,1,0,0
+sim_unknown_uav_005_M003,Unknown,6,1,0,0
+sim_unknown_uav_005_M003,Unknown,7,0,0,0
+sim_unknown_uav_005_M003,Unknown,8,0,0,0
+sim_unknown_uav_006_M002,Unknown,1,0,0,0
+sim_unknown_uav_006_M002,Unknown,2,0,0,0
+sim_unknown_uav_006_M002,Unknown,3,0,0,0
+sim_unknown_uav_006_M002,Unknown,4,1,1,1
+sim_unknown_uav_006_M002,Unknown,5,1,0,0
+sim_unknown_uav_006_M002,Unknown,6,1,0,0
+sim_unknown_uav_006_M002,Unknown,7,1,0,0
+sim_unknown_uav_006_M002,Unknown,8,1,0,0
+sim_unknown_uav_006_M002,Unknown,9,1,0,0
+sim_unknown_uav_006_M002,Unknown,10,1,0,0
+sim_unknown_uav_006_M002,Unknown,11,1,0,0
+sim_unknown_uav_006_M002,Unknown,12,1,0,0
+sim_unknown_uav_007_M001,Unknown,1,1,0,0
+sim_unknown_uav_007_M001,Unknown,2,1,1,1
+sim_unknown_uav_007_M001,Unknown,3,1,0,0
+sim_unknown_uav_007_M001,Unknown,4,1,0,0
+sim_unknown_uav_007_M001,Unknown,5,1,0,0
+sim_unknown_uav_007_M001,Unknown,6,1,0,0
+sim_unknown_uav_007_M001,Unknown,7,1,0,0
+sim_unknown_uav_013_M002,Unknown,1,1,1,1
+sim_unknown_uav_013_M002,Unknown,2,1,0,0
+sim_unknown_uav_013_M002,Unknown,3,1,0,0
+sim_unknown_uav_013_M002,Unknown,4,1,0,0
+sim_unknown_uav_013_M002,Unknown,5,1,0,0
+sim_unknown_uav_013_M002,Unknown,6,1,0,0
+sim_unknown_uav_013_M002,Unknown,7,1,0,0
+sim_unknown_uav_013_M002,Unknown,8,1,0,0
+sim_unknown_uav_013_M002,Unknown,9,1,0,0
+sim_unknown_uav_013_M002,Unknown,10,1,0,0
+sim_unknown_uav_013_M002,Unknown,11,1,0,0
+sim_unknown_uav_017_M002,Unknown,1,1,1,1
+sim_unknown_uav_017_M002,Unknown,2,1,0,0
+sim_unknown_uav_017_M002,Unknown,3,1,0,0
+sim_unknown_uav_017_M002,Unknown,4,1,0,0
+sim_unknown_uav_017_M002,Unknown,5,1,0,0
+sim_unknown_uav_017_M002,Unknown,6,1,0,0
+sim_unknown_uav_017_M002,Unknown,7,0,0,0
+sim_unknown_uav_017_M002,Unknown,8,0,0,0
+sim_unknown_uav_017_M002,Unknown,9,0,0,0
+sim_unknown_uav_017_M002,Unknown,10,0,0,0
+sim_unknown_uav_020_M001,Unknown,1,1,1,1
+sim_unknown_uav_020_M001,Unknown,2,1,0,0
+sim_unknown_uav_020_M001,Unknown,3,1,0,0
+sim_unknown_uav_020_M001,Unknown,4,1,0,0
+sim_unknown_uav_020_M001,Unknown,5,1,0,0
+sim_unknown_uav_020_M001,Unknown,6,1,0,0
+sim_unknown_uav_020_M001,Unknown,7,1,0,0
+sim_unknown_uav_020_M001,Unknown,8,1,0,0
+sim_unknown_uav_021_M003,Unknown,1,0,0,0
+sim_unknown_uav_021_M003,Unknown,2,1,1,1
+sim_unknown_uav_021_M003,Unknown,3,1,0,0
+sim_unknown_uav_021_M003,Unknown,4,1,0,0
+sim_unknown_uav_021_M003,Unknown,5,1,0,0
+sim_unknown_uav_021_M003,Unknown,6,1,0,0
+sim_unknown_uav_021_M003,Unknown,7,1,0,0
+sim_unknown_uav_021_M003,Unknown,8,1,0,0
+sim_unknown_uav_021_M003,Unknown,9,1,0,0
+sim_unknown_uav_021_M003,Unknown,10,0,0,0
+sim_unknown_uav_021_M003,Unknown,11,0,0,0
+sim_unknown_uav_021_M003,Unknown,12,0,0,0
+sim_unknown_uav_021_M003,Unknown,13,0,0,0
+sim_unknown_uav_022_M008,Unknown,1,1,1,1
+sim_unknown_uav_022_M008,Unknown,2,1,0,0
+sim_unknown_uav_022_M008,Unknown,3,1,1,1
+sim_unknown_uav_022_M008,Unknown,4,1,0,0
+sim_unknown_uav_022_M008,Unknown,5,1,0,0
+sim_unknown_uav_022_M008,Unknown,6,1,0,0
+sim_unknown_uav_022_M008,Unknown,7,0,0,0
+sim_unknown_uav_022_M008,Unknown,8,0,0,0
+sim_unknown_uav_022_M008,Unknown,9,0,0,0
+sim_unknown_uav_022_M008,Unknown,10,0,0,0
+sim_unknown_uav_022_M008,Unknown,11,0,0,0
+sim_unknown_uav_022_M008,Unknown,12,0,0,0
+sim_unknown_uav_022_M008,Unknown,13,0,0,0
+sim_unknown_uav_023_M001,Unknown,1,1,1,1
+sim_unknown_uav_024_M001,Unknown,1,1,1,1
+sim_unknown_uav_024_M001,Unknown,2,1,1,1
+sim_unknown_uav_024_M001,Unknown,3,1,0,0
+sim_unknown_uav_024_M001,Unknown,4,1,0,0
+sim_unknown_uav_024_M001,Unknown,5,1,0,0
+sim_unknown_uav_024_M001,Unknown,6,1,0,0
+sim_unknown_uav_024_M001,Unknown,7,1,0,0
+sim_unknown_uav_024_M001,Unknown,8,1,0,0
+sim_unknown_uav_024_M001,Unknown,9,0,0,0
+sim_unknown_uav_024_M001,Unknown,10,0,0,0
+sim_unknown_uav_024_M001,Unknown,11,0,0,0
+sim_unknown_uav_024_M001,Unknown,12,0,0,0
+sim_unknown_uav_025_M001,Unknown,1,0,0,0
+sim_unknown_uav_025_M001,Unknown,2,1,1,1
+sim_unknown_uav_026_M002,Unknown,1,0,0,0
+sim_unknown_uav_026_M002,Unknown,2,1,0,0
+sim_unknown_uav_026_M002,Unknown,3,1,0,0
+sim_unknown_uav_026_M002,Unknown,4,1,0,0
+sim_unknown_uav_028_M002,Unknown,1,0,0,0
+sim_unknown_uav_028_M002,Unknown,2,0,0,0
+sim_unknown_uav_028_M002,Unknown,3,0,0,0
+sim_unknown_uav_028_M002,Unknown,4,0,0,0
+sim_unknown_uav_028_M002,Unknown,5,0,0,0
+sim_unknown_uav_028_M002,Unknown,6,0,0,0
+sim_unknown_uav_028_M002,Unknown,7,0,0,0
+sim_unknown_uav_028_M002,Unknown,8,1,1,1
+sim_unknown_uav_028_M002,Unknown,9,1,0,0
+sim_unknown_uav_028_M002,Unknown,10,1,0,0
+sim_unknown_uav_029_M001,Unknown,1,0,0,0
+sim_unknown_uav_029_M001,Unknown,2,1,0,0
+sim_unknown_uav_029_M001,Unknown,3,1,0,0
+sim_unknown_uav_029_M001,Unknown,4,1,0,0
+sim_unknown_uav_029_M001,Unknown,5,1,0,0
+sim_unknown_uav_029_M001,Unknown,6,1,0,0
+sim_unknown_uav_029_M001,Unknown,7,1,1,1
+sim_unknown_uav_029_M001,Unknown,8,1,0,0
+sim_unknown_uav_029_M001,Unknown,9,1,0,0
+sim_unknown_uav_029_M001,Unknown,10,1,1,1
+sim_unknown_uav_029_M001,Unknown,11,0,0,0
+sim_unknown_uav_030_M001,Unknown,1,0,0,0
+sim_unknown_uav_030_M001,Unknown,2,1,1,1
+sim_unknown_uav_030_M001,Unknown,3,1,1,1

@@ -39,6 +39,7 @@ wrj_status_t m3_preprocess_iq(wrj_cf32_t *iq, uint32_t count,
     float mad;
     float limit;
     float scale;
+    float upper_envelope;
     if (iq == NULL || workspace == NULL || count == 0U || count > workspace->max_samples) {
         return WRJ_ERR_ARGUMENT;
     }
@@ -58,11 +59,22 @@ wrj_status_t m3_preprocess_iq(wrj_cf32_t *iq, uint32_t count,
         workspace->metric[index] = wrj_complex_abs(iq[index].re, iq[index].im);
     }
     median = m3_quantile(workspace->scratch, workspace->metric, count, 0.5f);
+    /* E34 m3_preprocess_iq: MATLAB prctile uses half-sample endpoints.
+     * Keep received sparse OFDM peaks; the noise median alone is unsafe. */
+    {
+        const double position = 0.9995 * (double)count - 0.5;
+        const uint32_t lower = position <= 0.0 ? 0U : (uint32_t)floor(position);
+        const uint32_t upper = WRJ_MIN(count - 1U, lower + 1U);
+        const double fraction = position <= 0.0 ? 0.0 : position - (double)lower;
+        upper_envelope = (float)((double)workspace->scratch[WRJ_MIN(lower, count - 1U)] +
+            fraction * ((double)workspace->scratch[upper] -
+                        (double)workspace->scratch[WRJ_MIN(lower, count - 1U)]));
+    }
     for (index = 0U; index < count; ++index) {
         workspace->metric[index] = fabsf(workspace->metric[index] - median);
     }
     mad = m3_quantile(workspace->scratch, workspace->metric, count, 0.5f);
-    limit = median + 8.0f * mad;
+    limit = WRJ_MAX(median + 8.0f * mad, 1.5f * upper_envelope);
     for (index = 0U; index < count; ++index) {
         const float magnitude = wrj_complex_abs(iq[index].re, iq[index].im);
         if (magnitude > limit && magnitude > 1.0e-12f) {
@@ -72,7 +84,7 @@ wrj_status_t m3_preprocess_iq(wrj_cf32_t *iq, uint32_t count,
         }
         energy += (double)wrj_complex_abs2(iq[index].re, iq[index].im);
     }
-    scale = (float)sqrt(energy / (double)count + 1.0e-20);
+    scale = (float)sqrt(energy / (double)count + 2.220446049250313e-16);
     if (scale <= 0.0f) {
         return WRJ_ERR_DATA;
     }

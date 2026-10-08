@@ -1,0 +1,4 @@
+candidate,stage,spectralCoarseHz,CPPeaks,NFFT,CPLength,correlationRe,correlationIm,angleRad,CPDerivedHz,stage1Hz,stage2Hz,combinedHz,appliedHz,residualHz,phaseOrigin
+sim_remoteid_ble_028_M001,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+sim_remoteid_ble_028_M001,2,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+sim_remoteid_ble_028_M001,3,0,0,0,0,0,0,0,0,0,0,0,0,0,0

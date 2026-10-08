@@ -1,67 +1,99 @@
 #include "m3_module3.h"
+#include "wrj_ble_e34.h"
 #include "common/perf_timer.h"
 #include "wrj_io.h"
+#include "wrj_dsp64.h"
 
 #include <stdlib.h>
 
 static wrj_status_t m3_control_bandlimit_fft(wrj_cf32_t *iq, uint32_t count,
                                              float sample_rate_hz, float bandwidth_hz)
 {
-    uint32_t length = 1U;
-    float *re;
-    float *im;
-    uint32_t index;
+    uint32_t length = 1U, index;
+    float *re, *im, *kernel_re, *kernel_im;
     const float pass_hz = WRJ_MIN(0.44f * sample_rate_hz,
                                   WRJ_MAX(600000.0f, 0.62f * bandwidth_hz));
     const float stop_hz = WRJ_MIN(0.48f * sample_rate_hz,
                                   WRJ_MAX(pass_hz + 200000.0f, 0.78f * bandwidth_hz));
-    while (length < count && length <= UINT32_MAX / 2U) {
+    /* MATLAB filters the exact N-point DFT.  Zero padding to the next power
+     * of two changes the bin grid and, on short bursts, the output samples.
+     * Bluestein evaluates that same N-point DFT using the radix-2 backend. */
+    if (count == 0U || count > UINT32_MAX / 2U) return WRJ_ERR_CAPACITY;
+    while (length < 2U * count - 1U && length <= UINT32_MAX / 2U) {
         length <<= 1U;
     }
-    if (length < count) {
+    if (length < 2U * count - 1U) {
         return WRJ_ERR_CAPACITY;
     }
     re = calloc(length, sizeof(*re));
     im = calloc(length, sizeof(*im));
-    if (re == NULL || im == NULL) {
-        free(re);
-        free(im);
+    kernel_re = calloc(length, sizeof(*kernel_re));
+    kernel_im = calloc(length, sizeof(*kernel_im));
+    if (re == NULL || im == NULL || kernel_re == NULL || kernel_im == NULL) {
+        free(re); free(im); free(kernel_re); free(kernel_im);
         return WRJ_ERR_MEMORY;
     }
     for (index = 0U; index < count; ++index) {
-        re[index] = iq[index].re;
-        im[index] = iq[index].im;
-    }
-    if (m3_fft_forward_radix2(re, im, length) != WRJ_OK) {
-        free(re);
-        free(im);
-        return WRJ_ERR_DATA;
-    }
-    for (index = 0U; index < length; ++index) {
-        const uint32_t centered = WRJ_MIN(index, length - index);
-        const float frequency = (float)centered * sample_rate_hz / (float)length;
-        float gain = 1.0f;
-        if (frequency >= stop_hz) {
-            gain = 0.0f;
-        } else if (frequency > pass_hz) {
-            gain = 0.5f + 0.5f * cosf((float)(WRJ_PI *
-                (frequency - pass_hz) / (stop_hz - pass_hz)));
+        const double angle = WRJ_PI * (double)(((uint64_t)index * index) %
+                                              (2ULL * count)) / (double)count;
+        kernel_re[index] = (float)cos(angle);
+        kernel_im[index] = (float)sin(angle);
+        if (index != 0U) {
+            kernel_re[length - index] = kernel_re[index];
+            kernel_im[length - index] = kernel_im[index];
         }
-        re[index] *= gain;
-        im[index] = -im[index] * gain;
     }
-    if (m3_fft_forward_radix2(re, im, length) != WRJ_OK) {
-        free(re);
-        free(im);
-        return WRJ_ERR_DATA;
+    if (m3_fft_forward_radix2(kernel_re, kernel_im, length) != WRJ_OK)
+        goto fft_error;
+    for (uint32_t pass = 0U; pass < 2U; ++pass) {
+        memset(re, 0, (size_t)length * sizeof(*re));
+        memset(im, 0, (size_t)length * sizeof(*im));
+        for (index = 0U; index < count; ++index) {
+            const double angle = WRJ_PI * (double)(((uint64_t)index * index) %
+                                                  (2ULL * count)) / (double)count;
+            const float c = (float)cos(angle), s = (float)sin(angle);
+            const float input_re = iq[index].re;
+            const float input_im = pass == 0U ? iq[index].im : -iq[index].im;
+            re[index] = input_re * c + input_im * s;
+            im[index] = input_im * c - input_re * s;
+        }
+        if (m3_fft_forward_radix2(re, im, length) != WRJ_OK) goto fft_error;
+        for (index = 0U; index < length; ++index) {
+            const float a = re[index], b = im[index];
+            re[index] = a * kernel_re[index] - b * kernel_im[index];
+            im[index] = a * kernel_im[index] + b * kernel_re[index];
+            im[index] = -im[index];
+        }
+        if (m3_fft_forward_radix2(re, im, length) != WRJ_OK) goto fft_error;
+        for (index = 0U; index < count; ++index) {
+            const double angle = WRJ_PI * (double)(((uint64_t)index * index) %
+                                                  (2ULL * count)) / (double)count;
+            const float c = (float)cos(angle), s = (float)sin(angle);
+            const float a = re[index] / (float)length;
+            const float b = -im[index] / (float)length;
+            const float transformed_re = a * c + b * s;
+            const float transformed_im = b * c - a * s;
+            if (pass == 0U) {
+                const uint32_t centered = WRJ_MIN(index, count - index);
+                const float frequency = (float)centered * sample_rate_hz / (float)count;
+                float gain = 1.0f;
+                if (frequency >= stop_hz) gain = 0.0f;
+                else if (frequency > pass_hz)
+                    gain = 0.5f + 0.5f * cosf((float)(WRJ_PI *
+                        (frequency - pass_hz) / (stop_hz - pass_hz)));
+                iq[index].re = transformed_re * gain;
+                iq[index].im = transformed_im * gain;
+            } else {
+                iq[index].re = transformed_re / (float)count;
+                iq[index].im = -transformed_im / (float)count;
+            }
+        }
     }
-    for (index = 0U; index < count; ++index) {
-        iq[index].re = re[index] / (float)length;
-        iq[index].im = -im[index] / (float)length;
-    }
-    free(re);
-    free(im);
+    free(re); free(im); free(kernel_re); free(kernel_im);
     return WRJ_OK;
+fft_error:
+    free(re); free(im); free(kernel_re); free(kernel_im);
+    return WRJ_ERR_DATA;
 }
 
 
@@ -122,13 +154,13 @@ static void m3_set_status(m3_result_t *result, const char *status)
     snprintf(result->status, sizeof(result->status), "%s", status);
 }
 
-static float m3_wrap_fractional_cfo(float cfo_hz, float subcarrier_spacing_hz)
+static double m3_wrap_fractional_cfo(double cfo_hz, double subcarrier_spacing_hz)
 {
-    float wrapped;
+    double wrapped;
     if (subcarrier_spacing_hz <= 0.0f || !isfinite(cfo_hz)) {
         return cfo_hz;
     }
-    wrapped = fmodf(cfo_hz + 0.5f * subcarrier_spacing_hz, subcarrier_spacing_hz);
+    wrapped = fmod(cfo_hz + 0.5 * subcarrier_spacing_hz, subcarrier_spacing_hz);
     if (wrapped < 0.0f) {
         wrapped += subcarrier_spacing_hz;
     }
@@ -146,6 +178,8 @@ void m3_default_config(m3_config_t *config)
     config->sync_accept_threshold = 0.80f;
     config->spectrum_search_fraction = 0.48f;
     config->enable_integer_cfo_search = 1U;
+    config->enable_profile_retry = 1U;
+    config->enable_deep_receiver = 1U;
 }
 
 wrj_status_t m3_workspace_init(m3_workspace_t *workspace, const m3_config_t *config)
@@ -314,8 +348,12 @@ wrj_status_t m3_run(const wrj_candidate_t *candidate, const wrj_cf32_t *iq,
     uint32_t nfft = 0U;
     uint32_t cp_samples = 0U;
     wrj_profile_kind_t profile;
-    float spectral = 0.0f;
-    float fine_cfo_hz = 0.0f;
+    double spectral = 0.0;
+    double fine_cfo_hz = 0.0;
+    double second_fine_cfo_hz = 0.0;
+    m3_cp_probe_t cp_stage1={0},cp_stage2={0};
+    double droneid_applied_fractional_hz = 0.0;
+    int32_t droneid_absolute_offset = 0;
     int32_t integer_cfo_index = 0;
     float integer_cfo_offset_hz = 0.0f;
     m3_result_t sync_result;
@@ -389,15 +427,20 @@ wrj_status_t m3_run(const wrj_candidate_t *candidate, const wrj_cf32_t *iq,
     memcpy(workspace->baseband, workspace->compensated,
            sizeof(*workspace->baseband) * (size_t)count);
     M3_PERF_START(stage_timer);
-    if (profile == WRJ_PROFILE_CONTROL_BURST || profile == WRJ_PROFILE_AUTEL_CONTROL_CP ||
-        profile == WRJ_PROFILE_DRONEID_ZC || profile == WRJ_PROFILE_UNKNOWN) {
-        status = m3_control_bandlimit_fft(workspace->compensated, count,
-                                          candidate->sample_rate_hz, candidate->bandwidth_hz);
-    } else {
-        status = m3_bandlimit_fir(workspace->compensated, count, candidate->sample_rate_hz,
-                                  candidate->bandwidth_hz, workspace);
-    }
+    status = config->enable_deep_receiver == 0U ?
+        wrj_bandlimit64(workspace->compensated, count,
+            candidate->sample_rate_hz, candidate->bandwidth_hz) :
+        m3_control_bandlimit_fft(workspace->compensated, count,
+            candidate->sample_rate_hz, candidate->bandwidth_hz);
     M3_PERF_STOP(M3_PERF_BANDLIMIT_FIR, stage_timer);
+    {
+        const char *probe_path=getenv("WRJ_M3_BANDLIMIT_PROBE");
+        if (probe_path) {
+            fprintf(stderr,"M3_STAGE spectral=%.17g nfft=%u cp=%u phase_origin=0\n",spectral,nfft,cp_samples);
+            FILE *probe=fopen(probe_path,"wb");
+            if (probe) { (void)fwrite(workspace->compensated,sizeof(wrj_cf32_t),count,probe);fclose(probe); }
+        }
+    }
     if (status != WRJ_OK) {
         m3_set_status(result, "bandlimit_failed");
         M3_PERF_STOP(M3_PERF_M3_TOTAL, total_timer);
@@ -421,19 +464,75 @@ wrj_status_t m3_run(const wrj_candidate_t *candidate, const wrj_cf32_t *iq,
         m3_result_t alternate;
         float primary_score;
         float alternate_score = -1.0f;
+        uint32_t profiles_tried = 1U;
         memset(&primary, 0, sizeof(primary));
         memset(&alternate, 0, sizeof(alternate));
         switch (profile) {
             case WRJ_PROFILE_DRONEID_ZC:
+            {
+                m3_result_t first_cp;
+                memset(&first_cp, 0, sizeof(first_cp));
+                if (m3_cp_synchronize(workspace->compensated, count, nfft, cp_samples,
+                                      config->max_frames, workspace, &first_cp) == WRJ_OK &&
+                    isfinite(first_cp.fractional_cfo_hz)) {
+                    droneid_applied_fractional_hz = first_cp.fractional_cfo_hz *
+                                                    candidate->sample_rate_hz;
+                    m3_cfo_compensate(workspace->compensated, workspace->compensated,
+                                      count, candidate->sample_rate_hz,
+                                      droneid_applied_fractional_hz);
+                }
                 status = m3_droneid_synchronize(workspace->compensated, count,
                                                 candidate->sample_rate_hz,
                                                 config->max_frames, workspace, &primary);
+                if (status == WRJ_OK) {
+                    const float raw = m3_droneid_frame_residual_cfo(
+                        workspace->compensated, count, candidate->sample_rate_hz,
+                        &primary);
+                    const float scs = candidate->sample_rate_hz / (float)nfft;
+                    const float limit = WRJ_MIN(500.0f, 0.08f * scs);
+                    if (getenv("WRJ_M3_DIAG") != NULL) {
+                        fprintf(stderr, "droneid_frame_residual_raw_hz=%.9f limit_hz=%.3f\n",
+                                raw, limit);
+                    }
+                    if (isfinite(raw) && fabsf(raw) >= 0.25f && fabsf(raw) <= limit) {
+                        const float correction = 0.60f * raw;
+                        m3_result_t refined;
+                        memset(&refined, 0, sizeof(refined));
+                        m3_cfo_compensate(workspace->compensated,
+                                          workspace->compensated, count,
+                                          candidate->sample_rate_hz, correction);
+                        if (m3_droneid_synchronize(workspace->compensated, count,
+                                candidate->sample_rate_hz, config->max_frames,
+                                workspace, &refined) == WRJ_OK) {
+                            primary = refined;
+                            droneid_applied_fractional_hz += correction;
+                            if (getenv("WRJ_M3_DIAG") != NULL)
+                                fprintf(stderr, "droneid_frame_residual_applied_hz=%.9f\n",
+                                        correction);
+                        } else {
+                            if (getenv("WRJ_M3_DIAG") != NULL)
+                                fprintf(stderr, "droneid_frame_residual_resync_rejected\n");
+                            m3_cfo_compensate(workspace->compensated,
+                                              workspace->compensated, count,
+                                              candidate->sample_rate_hz, -correction);
+                        }
+                    }
+                }
                 break;
+            }
             case WRJ_PROFILE_REMOTEID_BLE:
                 status = m3_remoteid_ble_synchronize(workspace->compensated, count,
                                                      candidate->sample_rate_hz,
                                                      config->max_frames, workspace, &primary);
-                if (status == WRJ_OK && primary.crc_success_count == 0U) {
+                if (config->enable_deep_receiver == 0U) {
+                    snprintf(primary.ble_origin_candidate,sizeof(primary.ble_origin_candidate),"%s",candidate->candidate_id);
+                    snprintf(primary.ble_origin_source,sizeof(primary.ble_origin_source),"%s",candidate->source_file);
+                    status = wrj_ble_decode_e34(workspace->compensated,count,candidate->sample_rate_hz,&primary);
+                    if(status!=WRJ_OK)break;
+                    status = wrj_ble_fast_sync(workspace->compensated, count,
+                        candidate->sample_rate_hz, &primary);
+                }
+                if (config->enable_deep_receiver != 0U && status == WRJ_OK && primary.crc_success_count == 0U) {
                     static const float residual_grid_hz[9] = {
                         -250000.0f, -187500.0f, -156250.0f, -125000.0f, -62500.0f,
                           62500.0f,  125000.0f,  187500.0f,  250000.0f};
@@ -479,6 +578,24 @@ wrj_status_t m3_run(const wrj_candidate_t *candidate, const wrj_cf32_t *iq,
                     snprintf(primary.sync_method, sizeof(primary.sync_method),
                              "BLE_1M_AA_multiphase_CRC24_residual_CFO");
                 }
+                if (config->enable_deep_receiver != 0U && status == WRJ_OK && primary.crc_success_count == 0U) {
+                    m3_result_t receiver_trial;
+                    float correction_hz = 0.0f;
+                    memset(&receiver_trial, 0, sizeof(receiver_trial));
+                    if (m3_ble_low_snr_receiver_bank(workspace->compensated, count,
+                            candidate->sample_rate_hz, config->max_frames, workspace,
+                            &receiver_trial,
+                            candidate->coarse_cfo_hz - spectral - primary.residual_cfo_hz,
+                            &correction_hz) == WRJ_OK) {
+                        m3_cfo_compensate(workspace->compensated, workspace->compensated,
+                                          count, candidate->sample_rate_hz, correction_hz);
+                        receiver_trial.residual_cfo_hz = primary.residual_cfo_hz + correction_hz;
+                        receiver_trial.fractional_cfo_hz = 0.0f;
+                        primary = receiver_trial;
+                        snprintf(primary.sync_method, sizeof(primary.sync_method),
+                                 "BLE_1M_low_SNR_filtered_resampled_CRC24");
+                    }
+                }
                 break;
             case WRJ_PROFILE_CONTROL_BURST:
                 M3_PERF_START(stage_timer);
@@ -500,8 +617,9 @@ wrj_status_t m3_run(const wrj_candidate_t *candidate, const wrj_cf32_t *iq,
         }
         primary_score = 0.72f * primary.sync_confidence +
             0.28f * wrj_clip01(primary.peak_metric);
-        if (primary.sync_confidence < 0.88f && profile != WRJ_PROFILE_UNKNOWN) {
-            result->profiles_tried = 2U;
+        if ((config->enable_profile_retry != 0U || profile == WRJ_PROFILE_CONTROL_BURST) &&
+            primary.sync_confidence < 0.88f && profile != WRJ_PROFILE_UNKNOWN) {
+            profiles_tried = 2U;
             M3_PERF_START(stage_timer);
             if (m3_blind_synchronize(workspace->compensated, count,
                                      candidate->sample_rate_hz, config->max_frames,
@@ -511,7 +629,13 @@ wrj_status_t m3_run(const wrj_candidate_t *candidate, const wrj_cf32_t *iq,
             }
             M3_PERF_STOP(M3_PERF_UNKNOWN_CONTROL_SYNC, stage_timer);
         }
-        if (alternate_score >= primary_score + 0.025f) {
+        /* A pair of globally detected DroneID ZC roots is independent
+         * physical evidence. Do not let an unrelated blind-CP single peak
+         * override that frame grid merely through the older scalar score. */
+        if (alternate_score >= primary_score + 0.025f &&
+            !(profile == WRJ_PROFILE_DRONEID_ZC &&
+              primary.droneid_zc_peak_position >= 1.0f &&
+              primary.num_frames >= 2U && primary.peak_metric >= 0.10f)) {
             primary = alternate;
             profile = profile == WRJ_PROFILE_CONTROL_BURST ?
                 WRJ_PROFILE_DJI_CONTROL_BLIND : WRJ_PROFILE_UNKNOWN;
@@ -522,7 +646,7 @@ wrj_status_t m3_run(const wrj_candidate_t *candidate, const wrj_cf32_t *iq,
         snprintf(result->profile_name, sizeof(result->profile_name), "%s", wrj_profile_name(profile));
         snprintf(result->recommended_profile, sizeof(result->recommended_profile), "%s",
                  wrj_profile_name(m3_select_profile(candidate, NULL, NULL)));
-        result->profiles_tried = primary.sync_confidence < 0.88f ? 2U : 1U;
+        result->profiles_tried = profiles_tried;
         result->profile_changed_by_evidence = (uint8_t)(profile != m3_select_profile(candidate, NULL, NULL));
         if (result->profiles_tried > 1U) {
             snprintf(result->attempted_profiles, sizeof(result->attempted_profiles), "%s|Unknown_Blind_Repetition",
@@ -532,7 +656,10 @@ wrj_status_t m3_run(const wrj_candidate_t *candidate, const wrj_cf32_t *iq,
                      result->recommended_profile);
         }
         result->spectral_correction_hz = spectral;
-        result->fractional_cfo_hz *= candidate->sample_rate_hz;
+        result->fractional_cfo_hz = profile == WRJ_PROFILE_DRONEID_ZC ?
+            droneid_applied_fractional_hz :
+            result->fractional_cfo_hz * candidate->sample_rate_hz +
+            droneid_applied_fractional_hz;
         result->integer_cfo_index = integer_cfo_index;
         result->integer_cfo_offset_hz = integer_cfo_offset_hz;
         result->cfo_candidate_count = nfft > 0U ? 7U : 1U;
@@ -541,9 +668,58 @@ wrj_status_t m3_run(const wrj_candidate_t *candidate, const wrj_cf32_t *iq,
         result->estimated_cfo_hz = spectral + integer_cfo_offset_hz +
             result->fractional_cfo_hz +
             (profile == WRJ_PROFILE_REMOTEID_BLE ? result->residual_cfo_hz : 0.0f);
+        result->stage1_cfo_hz=result->fractional_cfo_hz;
+        result->stage2_cfo_hz=0.0;
+        result->combined_cfo_hz=result->fractional_cfo_hz;
+        result->applied_cfo_hz=result->estimated_cfo_hz;
+        result->residual_probe_hz=result->residual_cfo_hz;
+        result->phase_origin=0U;
+        /* MATLAB m3_run_frequency_and_sync applies the DroneID CP fractional
+         * correction to y before handing compensatedSegment to Module4.
+         * The C path previously reported this estimate but handed M4 IQ with
+         * only spectral/integer correction, a physical CFO data-flow gap. */
+        if (profile == WRJ_PROFILE_DRONEID_ZC && isfinite(result->fractional_cfo_hz)) {
+            m3_cfo_compensate(workspace->compensated, workspace->compensated,
+                              count, candidate->sample_rate_hz,
+                              result->fractional_cfo_hz - droneid_applied_fractional_hz);
+            if (config->enable_deep_receiver != 0U) {
+                droneid_absolute_offset = m3_refine_droneid_absolute_timing(
+                    workspace->compensated, count, candidate->sample_rate_hz,
+                    workspace, result);
+            }
+        } else if (profile != WRJ_PROFILE_REMOTEID_BLE &&
+                   isfinite(result->fractional_cfo_hz) &&
+                   result->fractional_cfo_hz != 0.0f) {
+            /* The blind CP/control estimator already reported this increment,
+             * but MATLAB also applies it to y before saving alignedFrames.
+             * Keep the measured frame grid; only close the IQ handoff gap. */
+            m3_cfo_compensate(workspace->compensated, workspace->compensated,
+                              count, candidate->sample_rate_hz,
+                              result->fractional_cfo_hz);
+        }
         M3_PERF_START(stage_timer);
-        m3_estimate_sfo(workspace->compensated, count, nfft, cp_samples, result);
+        if (profile == WRJ_PROFILE_DRONEID_ZC) {
+            m3_estimate_droneid_sfo(workspace->compensated, count,
+                                    candidate->sample_rate_hz, workspace, result);
+        } else {
+            m3_estimate_sfo(workspace->compensated, count, nfft, cp_samples, result);
+        }
         M3_PERF_STOP(M3_PERF_SFO_ESTIMATION, stage_timer);
+        if (profile == WRJ_PROFILE_DRONEID_ZC && droneid_absolute_offset != 0 &&
+            result->num_frames > 0U) {
+            const int64_t period = result->frame_length_samples;
+            uint32_t frame;
+            int64_t shift = droneid_absolute_offset;
+            while ((int64_t)result->frame_start_samples_0based[0] + shift < 0)
+                shift += period;
+            while ((int64_t)result->frame_start_samples_0based[0] + shift > period)
+                shift -= period;
+            for (frame = 0U; frame < result->num_frames; ++frame) {
+                result->frame_start_samples_0based[frame] = (uint32_t)(
+                    (int64_t)result->frame_start_samples_0based[frame] + shift);
+            }
+            result->corrected_frame_start = (float)(result->frame_start_samples_0based[0] + 1U);
+        }
         if (result->sync_confidence >= config->sync_accept_threshold) {
             m3_set_status(result, "ok");
             M3_PERF_STOP(M3_PERF_M3_TOTAL, total_timer);
@@ -571,6 +747,7 @@ wrj_status_t m3_run(const wrj_candidate_t *candidate, const wrj_cf32_t *iq,
      * this refinement remains in the principal subcarrier interval. */
     fine_cfo_hz = m3_wrap_fractional_cfo(sync_result.fractional_cfo_hz * candidate->sample_rate_hz,
                                          candidate->sample_rate_hz / (float)nfft);
+    cp_stage1=sync_result.cp_probe[0];
     m3_cfo_compensate(workspace->compensated, workspace->compensated, count,
                       candidate->sample_rate_hz, fine_cfo_hz);
     memset(&sync_result, 0, sizeof(sync_result));
@@ -585,13 +762,37 @@ wrj_status_t m3_run(const wrj_candidate_t *candidate, const wrj_cf32_t *iq,
         M3_PERF_STOP(M3_PERF_M3_TOTAL, total_timer);
         return status;
     }
+    if (config->enable_deep_receiver == 0U) {
+        cp_stage2=sync_result.cp_probe[0];
+        /* E34 applies both CP estimates to IQ, then performs a third sync.
+         * The historical C path only reported this second increment. */
+        second_fine_cfo_hz = m3_wrap_fractional_cfo(
+            sync_result.fractional_cfo_hz * candidate->sample_rate_hz,
+            candidate->sample_rate_hz / (float)nfft);
+        m3_cfo_compensate(workspace->compensated, workspace->compensated, count,
+            candidate->sample_rate_hz, second_fine_cfo_hz);
+        memset(&sync_result, 0, sizeof(sync_result));
+        status = m3_cp_synchronize(workspace->compensated, count, nfft, cp_samples,
+            config->max_frames, workspace, &sync_result);
+        if (status != WRJ_OK) { *result = sync_result; return status; }
+    }
     *result = sync_result;
+    result->cp_probe[2]=sync_result.cp_probe[0];
+    result->cp_probe[0]=cp_stage1;
+    result->cp_probe[1]=cp_stage2;
+    result->stage1_cfo_hz=fine_cfo_hz;
+    result->stage2_cfo_hz=second_fine_cfo_hz;
+    result->combined_cfo_hz=fine_cfo_hz+second_fine_cfo_hz;
+    result->applied_cfo_hz=spectral+integer_cfo_offset_hz+fine_cfo_hz+second_fine_cfo_hz;
+    result->residual_probe_hz=sync_result.fractional_cfo_hz*candidate->sample_rate_hz;
+    result->phase_origin=0U;
     result->profile = profile;
     snprintf(result->profile_name, sizeof(result->profile_name), "%s", wrj_profile_name(profile));
     result->spectral_correction_hz = spectral;
-    result->fractional_cfo_hz = fine_cfo_hz +
-        m3_wrap_fractional_cfo(sync_result.fractional_cfo_hz * candidate->sample_rate_hz,
-                               candidate->sample_rate_hz / (float)nfft);
+    result->fractional_cfo_hz = fine_cfo_hz + (config->enable_deep_receiver == 0U ?
+        second_fine_cfo_hz : m3_wrap_fractional_cfo(
+            sync_result.fractional_cfo_hz * candidate->sample_rate_hz,
+            candidate->sample_rate_hz / (float)nfft));
     result->estimated_cfo_hz = spectral + integer_cfo_offset_hz + result->fractional_cfo_hz;
     result->integer_cfo_index = integer_cfo_index;
     result->integer_cfo_offset_hz = integer_cfo_offset_hz;
@@ -603,7 +804,8 @@ wrj_status_t m3_run(const wrj_candidate_t *candidate, const wrj_cf32_t *iq,
     snprintf(result->attempted_profiles, sizeof(result->attempted_profiles), "%s",
              wrj_profile_name(profile));
     M3_PERF_START(stage_timer);
-    m3_refine_cp_starts(workspace->baseband, count, nfft, cp_samples, result);
+    if (config->enable_deep_receiver != 0U)
+        m3_refine_cp_starts(workspace->baseband, count, nfft, cp_samples, result);
     M3_PERF_STOP(M3_PERF_FRAME_ALIGNMENT, stage_timer);
     M3_PERF_START(stage_timer);
     m3_estimate_sfo(workspace->compensated, count, nfft, cp_samples, result);

@@ -1,0 +1,12 @@
+{
+  "CPStageProbes": 9,
+  "passed": 9,
+  "actuallyExecutedCPStages": 5,
+  "maxCPDerivedErrorHz": 0.00017173749438370578,
+  "maxCombinedErrorHz": 0.00017173415835713968,
+  "correlationDefinition": "C selected CP correlations after coherence-quartile rejection, normalized and coherence-squared weighted; MATLAB raw per-peak correlations retained separately",
+  "tolerance": "Unchanged M3 CFO tolerance: abs <= 1Hz + 1e-6*abs(GoldenHz)",
+  "phaseOrigin": "n=0",
+  "inputBoundary": "Offline comparator only",
+  "combinedDefinition": "combinedHz is the sum of fractional increments; appliedHz additionally includes spectral coarse CFO. Blind/fallback profiles execute one CP CFO stage; absent later stages are zero and not counted as executed."
+}

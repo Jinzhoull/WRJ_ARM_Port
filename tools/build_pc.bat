@@ -2,7 +2,7 @@
 setlocal
 
 for %%I in ("%~dp0..") do set "PROJECT_ROOT=%%~fI"
-if not defined PC_BUILD_DIR set "PC_BUILD_DIR=%PROJECT_ROOT%\build-pc\windows"
+if not defined PC_BUILD_DIR set "PC_BUILD_DIR=%PROJECT_ROOT%\results_c_validation\final\build"
 if not defined CMAKE_GENERATOR set "CMAKE_GENERATOR=MinGW Makefiles"
 if not defined WRJ_ENABLE_PROFILING set "WRJ_ENABLE_PROFILING=OFF"
 

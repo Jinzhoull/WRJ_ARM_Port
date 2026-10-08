@@ -10,6 +10,8 @@
 #define WRJ_MAX_BYTES 512
 #define WRJ_MAX_FIELDS 24
 #define WRJ_MAX_PACKETS 32
+#define WRJ_MATLAB_MAX_OBSERVATIONS 20
+#define WRJ_MATLAB_MAX_FRAME_BYTES 64
 
 typedef struct {
     float re;
@@ -36,6 +38,8 @@ typedef struct {
     char parser_template_id[WRJ_TEXT_CAPACITY];
     char candidate_iq_artifact[WRJ_PATH_CAPACITY];
     float sample_rate_hz;
+    double candidate_start_sec;
+    double candidate_end_sec;
     float center_frequency_hz;
     float candidate_center_offset_hz;
     float bandwidth_hz;
@@ -53,12 +57,23 @@ typedef struct {
     float sync_accept_threshold;
     float spectrum_search_fraction;
     uint8_t enable_integer_cfo_search;
+    /* Legacy defaults stay enabled; E34 FAST explicitly disables these. */
+    uint8_t enable_profile_retry;
+    uint8_t enable_deep_receiver;
 } m3_config_t;
 
 typedef struct {
-    float estimated_cfo_hz;
-    float spectral_correction_hz;
-    float fractional_cfo_hz;
+    double correlation_re,correlation_im,angle_rad,cycles_per_sample;
+    uint32_t peak_count,nfft,cp_samples;
+} m3_cp_probe_t;
+
+typedef struct {
+    double estimated_cfo_hz;
+    m3_cp_probe_t cp_probe[3];
+    double stage1_cfo_hz,stage2_cfo_hz,combined_cfo_hz,applied_cfo_hz,residual_probe_hz;
+    uint32_t phase_origin;
+    double spectral_correction_hz;
+    double fractional_cfo_hz;
     float integer_cfo_offset_hz;
     int32_t integer_cfo_index;
     float residual_cfo_hz;
@@ -83,6 +98,16 @@ typedef struct {
     float symbol_timing_offset;
     uint32_t crc_attempt_count;
     uint32_t crc_success_count;
+    uint8_t ble_soft_recovery_enabled;
+    uint16_t ble_soft_recovered_count;
+    uint16_t ble_verified_packet_count;
+    uint8_t ble_verified_pdu[WRJ_MAX_PACKETS][39];
+    uint8_t ble_verified_raw_bits[WRJ_MAX_PACKETS][336];
+    char ble_origin_candidate[WRJ_TEXT_CAPACITY];
+    char ble_origin_source[WRJ_PATH_CAPACITY];
+    uint32_t ble_verified_crc[WRJ_MAX_PACKETS];
+    uint32_t ble_verified_start[WRJ_MAX_PACKETS];
+    float ble_verified_confidence[WRJ_MAX_PACKETS];
     uint32_t cfo_candidate_count;
     float selected_cfo_score;
     uint32_t profiles_tried;
@@ -123,6 +148,38 @@ typedef struct {
     float confidence;
 } m4_field_t;
 
+/* This describes a CRC-verified engineering proxy frame, never a claimed
+ * vendor-private DJI packet. Unknown fields are omitted from this struct. */
+typedef struct {
+    uint8_t attempted;
+    uint8_t complete;
+    uint8_t polarity_inverted;
+    uint8_t frame_id;
+    uint8_t message_type;
+    uint8_t state_code;
+    uint16_t device_id;
+    uint16_t timestamp_counter;
+    uint16_t payload_length;
+    uint16_t source_observation;
+    uint16_t byte_offset;
+    uint16_t observation_count;
+    uint16_t max_observation_bytes;
+    uint16_t header_candidates;
+    uint16_t complete_candidates;
+    uint16_t crc_valid_count;
+    uint32_t assembled_byte_count;
+    uint16_t assembled_observation_count;
+    uint16_t crc16_checked;
+    uint16_t crc16_passed;
+    uint16_t assembly_start_observation;
+    uint16_t assembly_end_observation;
+    uint8_t assembly_continuous;
+    uint32_t assembly_offsets[WRJ_MAX_PACKETS];
+    char assembly_method[40];
+    char polarity_mode[32];
+    char status[48];
+} m4_dji_wideband_parse_t;
+
 typedef struct {
     uint8_t bytes[WRJ_MAX_BYTES];
     float byte_confidence[WRJ_MAX_BYTES];
@@ -136,6 +193,9 @@ typedef struct {
     uint16_t packet_count;
     uint16_t packet_lengths[WRJ_MAX_PACKETS];
     uint8_t packet_bytes[WRJ_MAX_PACKETS][WRJ_MAX_BYTES];
+    uint32_t packet_source_start[WRJ_MAX_PACKETS];
+    float packet_confidence[WRJ_MAX_PACKETS];
+    uint8_t packet_full_symbol[WRJ_MAX_PACKETS];
     uint16_t crc_valid_count;
     uint8_t crc_checked;
     uint8_t crc_passed;
@@ -154,8 +214,20 @@ typedef struct {
     uint8_t message_types_mask;
     char decoder_method[WRJ_TEXT_CAPACITY];
     char crc_candidate_status[WRJ_TEXT_CAPACITY];
+    m4_dji_wideband_parse_t dji_wideband;
+    uint16_t verified_frame_length;
+    uint8_t verified_frame_bytes[2048];
     m4_status_t status;
     char status_text[WRJ_TEXT_CAPACITY];
+    uint8_t matlab_observation_count;
+    uint8_t matlab_observation_length[WRJ_MATLAB_MAX_OBSERVATIONS];
+    uint8_t matlab_observation_bytes[WRJ_MATLAB_MAX_OBSERVATIONS][WRJ_MATLAB_MAX_FRAME_BYTES];
+    uint8_t matlab_observation_labels[WRJ_MATLAB_MAX_OBSERVATIONS][WRJ_MATLAB_MAX_FRAME_BYTES];
+    uint8_t matlab_observation_physical_index[WRJ_MATLAB_MAX_OBSERVATIONS];
+    uint8_t matlab_observation_state_index[WRJ_MATLAB_MAX_OBSERVATIONS];
+    uint8_t matlab_observation_message_type[WRJ_MATLAB_MAX_OBSERVATIONS];
+    uint8_t matlab_observation_sequence[WRJ_MATLAB_MAX_OBSERVATIONS];
+    uint32_t matlab_observation_timestamp[WRJ_MATLAB_MAX_OBSERVATIONS];
 } m4_result_t;
 
 #endif

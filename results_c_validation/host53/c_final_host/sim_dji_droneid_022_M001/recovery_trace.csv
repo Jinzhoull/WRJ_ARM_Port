@@ -1,0 +1,11 @@
+candidate,step,state,result,details,CRCCount,seconds
+sim_dji_droneid_022_M001,0,FIRST_PASS_CHECK,FIRST_PASS_FAILED,"Independent received evidence gate",0,0
+sim_dji_droneid_022_M001,1,DIAGNOSE_FAILURE,DIAGNOSED,"BAD_SYNC",0,0
+sim_dji_droneid_022_M001,2,M3_DEEP_RETRY,EXECUTE,"Bounded received sync/CFO retry",0,0
+sim_dji_droneid_022_M001,3,M4_FAST_AFTER_M3_RETRY,EXECUTE,"Actual IQ with original CRC",0,3.818
+sim_dji_droneid_022_M001,4,REVALIDATE,GATE_FAIL,"Independent original CRC, semantics and candidate scope",0,4.011
+sim_dji_droneid_022_M001,5,M4_DEEP_RETRY,EXECUTE,"LEVEL_1_RECEIVED_PHY_SPECIALIST",0,4.011
+sim_dji_droneid_022_M001,6,REVALIDATE,GATE_FAIL,"Independent original CRC, semantics and candidate scope",0,4.192
+sim_dji_droneid_022_M001,7,M4_DEEP_RETRY,EXECUTE,"LEVEL_2_RECEIVED_PHY_SPECIALIST",0,4.192
+sim_dji_droneid_022_M001,8,REVALIDATE,PASS,"Independent original CRC, semantics and candidate scope",1,13.142
+sim_dji_droneid_022_M001,9,SUCCESS,PASS,"ORIGINAL_CRC_AND_INDEPENDENT_GATE",1,13.142

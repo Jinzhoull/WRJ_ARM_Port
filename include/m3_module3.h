@@ -26,11 +26,17 @@ typedef struct {
     uint32_t selected_peak_capacity;
     uint32_t spectrum_length;
     uint32_t spectrum_blocks;
+    uint8_t ble_soft_observation_count;
+    uint32_t ble_soft_start[8];
+    float ble_soft_score[8];
+    float ble_soft_bits[8][336];
     float *spectrum_block_power;
     float *spectrum_block_energy;
     float *spectrum_smooth;
     float *spectrum_weight;
     float *spectrum_aux;
+    uint32_t droneid_peak600_0based;
+    uint32_t droneid_peak147_0based;
 } m3_workspace_t;
 
 void m3_default_config(m3_config_t *config);
@@ -42,9 +48,9 @@ wrj_profile_kind_t m3_select_profile(const wrj_candidate_t *candidate,
                                      uint32_t *nfft, uint32_t *cp_samples);
 wrj_status_t m3_estimate_spectral_center(const wrj_cf32_t *iq, uint32_t count,
                                          float sample_rate_hz, float bandwidth_hz,
-                                         m3_workspace_t *workspace, float *offset_hz);
+                                         m3_workspace_t *workspace, double *offset_hz);
 void m3_cfo_compensate(const wrj_cf32_t *input, wrj_cf32_t *output, uint32_t count,
-                       float sample_rate_hz, float correction_hz);
+                       double sample_rate_hz, double correction_hz);
 wrj_status_t m3_bandlimit_fir(wrj_cf32_t *iq, uint32_t count, float sample_rate_hz,
                               float bandwidth_hz, m3_workspace_t *workspace);
 wrj_status_t m3_fft_forward_radix2(float *re, float *im, uint32_t length);
@@ -65,9 +71,26 @@ wrj_status_t m3_select_wideband_numerology(const wrj_cf32_t *iq, uint32_t count,
 wrj_status_t m3_droneid_synchronize(const wrj_cf32_t *iq, uint32_t count,
                                     float sample_rate_hz, uint32_t max_frames,
                                     m3_workspace_t *workspace, m3_result_t *result);
+int32_t m3_refine_droneid_absolute_timing(const wrj_cf32_t *iq, uint32_t count,
+                                           float sample_rate_hz, m3_workspace_t *workspace,
+                                           m3_result_t *result);
+void m3_estimate_droneid_sfo(const wrj_cf32_t *iq, uint32_t count,
+                             float sample_rate_hz, m3_workspace_t *workspace,
+                             m3_result_t *result);
+float m3_droneid_frame_residual_cfo(const wrj_cf32_t *iq, uint32_t count,
+                                    float sample_rate_hz, const m3_result_t *result);
 wrj_status_t m3_remoteid_ble_synchronize(const wrj_cf32_t *iq, uint32_t count,
                                          float sample_rate_hz, uint32_t max_frames,
                                          m3_workspace_t *workspace, m3_result_t *result);
+wrj_status_t m3_ble_low_snr_receiver_bank(const wrj_cf32_t *iq, uint32_t count,
+                                          float sample_rate_hz, uint32_t max_frames,
+                                          m3_workspace_t *workspace, m3_result_t *result,
+                                          float preferred_offset_hz,
+                                          float *relative_cfo_hz);
+int m3_ble_recover_soft_pdu(const float soft[336], uint8_t pdu[39],
+                            uint32_t *crc);
+int m3_ble_recover_basic_id(const float soft[336], uint8_t message_counter,
+                            uint8_t pdu[39], uint32_t *crc);
 wrj_status_t m3_burst_synchronize(const wrj_cf32_t *iq, uint32_t count,
                                   float sample_rate_hz, uint32_t max_frames,
                                   m3_workspace_t *workspace, m3_result_t *result);

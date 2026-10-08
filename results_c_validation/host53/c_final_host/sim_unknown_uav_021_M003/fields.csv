@@ -1,0 +1,14 @@
+candidate,record,semantic,startByte,endByte,numericValue,rawHex,crcVerified,dataType,asciiValue,validationStatus
+sim_unknown_uav_021_M003,0,syncWord,1,2,32382,7E7E,1,engineering_binary,"",CRC16_PASS
+sim_unknown_uav_021_M003,0,version,3,3,2,2F,1,engineering_binary,"",CRC16_PASS
+sim_unknown_uav_021_M003,0,messageType,3,3,15,2F,1,engineering_binary,"",CRC16_PASS
+sim_unknown_uav_021_M003,0,sequenceNumber,4,4,1,01,1,engineering_binary,"",CRC16_PASS
+sim_unknown_uav_021_M003,0,payloadLength,5,6,52,0034,1,engineering_binary,"",CRC16_PASS
+sim_unknown_uav_021_M003,0,stateCode,7,7,0,00,1,engineering_binary,"",CRC16_PASS
+sim_unknown_uav_021_M003,0,deviceId,8,9,231,00E7,1,engineering_binary,"",CRC16_PASS
+sim_unknown_uav_021_M003,0,timestampCounter,10,11,23102,5A3E,1,engineering_binary,"",CRC16_PASS
+sim_unknown_uav_021_M003,0,payload,12,63,nan,7E0200027D1B5ED5CAD6AD0BCB1A591FFF945DE5708EB932956AB754E57B4E13210874C1E04D570B7C42D2FD05D89B9188AB51B4,1,engineering_binary,"",CRC16_PASS
+sim_unknown_uav_021_M003,0,payloadTag,12,12,126,7E,1,engineering_binary,"",CRC16_PASS
+sim_unknown_uav_021_M003,0,payloadSequence,13,13,2,02,1,engineering_binary,"",CRC16_PASS
+sim_unknown_uav_021_M003,0,payloadState,14,14,0,00,1,engineering_binary,"",CRC16_PASS
+sim_unknown_uav_021_M003,0,engineeringCrc16,64,65,64159,FA9F,1,engineering_binary,"",CRC16_PASS

@@ -1,0 +1,4 @@
+candidate,stage,spectralCoarseHz,CPPeaks,NFFT,CPLength,correlationRe,correlationIm,angleRad,CPDerivedHz,stage1Hz,stage2Hz,combinedHz,appliedHz,residualHz,phaseOrigin
+sim_dji_droneid_013_M001,1,71929.6875,0,0,0,0,0,0,0,-4848.3886861613919,0,-4848.3886861613919,67081.298813838614,0,0
+sim_dji_droneid_013_M001,2,71929.6875,0,0,0,0,0,0,0,-4848.3886861613919,0,-4848.3886861613919,67081.298813838614,0,0
+sim_dji_droneid_013_M001,3,71929.6875,0,0,0,0,0,0,0,-4848.3886861613919,0,-4848.3886861613919,67081.298813838614,0,0

@@ -1,0 +1,15 @@
+candidate,record,semantic,startByte,endByte,numericValue,rawHex,crcVerified,dataType,asciiValue,validationStatus
+sim_dji_control_021_M001,0,syncWord,1,2,53698,D1C2,1,engineering_binary,"",CRC16_PASS
+sim_dji_control_021_M001,0,version,3,3,2,21,1,engineering_binary,"",CRC16_PASS
+sim_dji_control_021_M001,0,messageType,3,3,1,21,1,engineering_binary,"",CRC16_PASS
+sim_dji_control_021_M001,0,sequenceNumber,4,4,0,00,1,engineering_binary,"",CRC16_PASS
+sim_dji_control_021_M001,0,payloadLength,5,6,78,004E,1,engineering_binary,"",CRC16_PASS
+sim_dji_control_021_M001,0,stateCode,7,7,0,00,1,engineering_binary,"",CRC16_PASS
+sim_dji_control_021_M001,0,deviceId,8,9,51,0033,1,engineering_binary,"",CRC16_PASS
+sim_dji_control_021_M001,0,timestampCounter,10,11,5101,13ED,1,engineering_binary,"",CRC16_PASS
+sim_dji_control_021_M001,0,payload,12,89,nan,C200010716A41B4FFFDF5B46CCDB960B94D71660E40FE3FC215BB1D2421C9948C7787B1C6E78F132D4BA906E1129AD450F38B3380B1AB88074B2E0075750ABA03B9026E8631913B3640E56EF4579,1,engineering_binary,"",CRC16_PASS
+sim_dji_control_021_M001,0,payloadTag,12,12,194,C2,1,engineering_binary,"",CRC16_PASS
+sim_dji_control_021_M001,0,payloadState,13,13,0,00,1,engineering_binary,"",CRC16_PASS
+sim_dji_control_021_M001,0,payloadSequence,14,14,1,01,1,engineering_binary,"",CRC16_PASS
+sim_dji_control_021_M001,0,controlOctets,15,19,nan,0716A41B4F,1,engineering_binary,"",CRC16_PASS
+sim_dji_control_021_M001,0,engineeringCrc16,90,91,23445,5B95,1,engineering_binary,"",CRC16_PASS

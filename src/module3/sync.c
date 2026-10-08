@@ -210,8 +210,8 @@ wrj_status_t m3_cp_synchronize(const wrj_cf32_t *iq, uint32_t count,
     uint32_t index;
     uint32_t output_count;
     const uint32_t symbol_length = nfft + cp_samples;
-    const uint32_t min_distance = WRJ_MAX(4U, (6U * symbol_length) / 10U);
-    const uint32_t tolerance = WRJ_MAX(4U, (8U * symbol_length) / 100U);
+    const uint32_t min_distance = WRJ_MAX(4U, (uint32_t)lround(0.60 * symbol_length));
+    const uint32_t tolerance = WRJ_MAX(4U, (uint32_t)lround(0.08 * symbol_length));
     float base_level;
     float mad_level;
     float threshold;
@@ -267,7 +267,8 @@ wrj_status_t m3_cp_synchronize(const wrj_cf32_t *iq, uint32_t count,
             const uint32_t distance = workspace->peak_selected[other].index > workspace->peak_candidates[index].index ?
                 workspace->peak_selected[other].index - workspace->peak_candidates[index].index :
                 workspace->peak_candidates[index].index - workspace->peak_selected[other].index;
-            if (distance < min_distance) {
+            /* MATLAB findpeaks rejects peaks at the boundary as well. */
+            if (distance <= min_distance) {
                 separated = 0;
                 break;
             }
@@ -347,8 +348,15 @@ wrj_status_t m3_cp_synchronize(const wrj_cf32_t *iq, uint32_t count,
             phase_re += (double)(coherence * coherence) * sr / magnitude;
             phase_im += (double)(coherence * coherence) * si / magnitude;
         }
-        result->fractional_cfo_hz = (float)(atan2(phase_im, phase_re) /
+        result->fractional_cfo_hz = (atan2(phase_im, phase_re) /
             (2.0 * WRJ_PI * (double)nfft));
+        result->cp_probe[0].correlation_re=phase_re;
+        result->cp_probe[0].correlation_im=phase_im;
+        result->cp_probe[0].angle_rad=atan2(phase_im,phase_re);
+        result->cp_probe[0].cycles_per_sample=result->fractional_cfo_hz;
+        result->cp_probe[0].peak_count=kept_count;
+        result->cp_probe[0].nfft=nfft;
+        result->cp_probe[0].cp_samples=cp_samples;
         m3_write_cp_fusion_debug(iq, nfft, cp_samples, max_frames,
                                  workspace->peak_selected, workspace->scratch,
                                  candidate_count, selected_count, kept_count,

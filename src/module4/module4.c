@@ -66,7 +66,9 @@ wrj_status_t m4_run(const wrj_candidate_t *candidate, const m3_result_t *m3_resu
         case WRJ_PROFILE_DJI_WIDEBAND_CP:
         case WRJ_PROFILE_AUTEL_WIDEBAND_CP:
         case WRJ_PROFILE_AUTEL_CONTROL_CP:
+        case WRJ_PROFILE_DJI_CONTROL_BLIND:
         case WRJ_PROFILE_DRONEID_ZC:
+        case WRJ_PROFILE_UNKNOWN:
             status = m4_recover_profile_bytes(compensated_iq, sample_count,
                                               candidate->sample_rate_hz, m3_result,
                                               config, workspace, result);
@@ -92,6 +94,8 @@ wrj_status_t m4_run(const wrj_candidate_t *candidate, const m3_result_t *m3_resu
         m4_parse_structural_fields(result);
         result->status = M4_STATUS_PARTIAL;
         snprintf(result->parse_status, sizeof(result->parse_status), "partial_parse");
+        if (m3_result->profile == WRJ_PROFILE_DJI_WIDEBAND_CP)
+            m4_parse_dji_wideband_proxy(candidate, m3_result, result);
     }
     return WRJ_OK;
 }

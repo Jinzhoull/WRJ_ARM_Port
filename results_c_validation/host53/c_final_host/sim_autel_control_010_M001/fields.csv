@@ -1,0 +1,15 @@
+candidate,record,semantic,startByte,endByte,numericValue,rawHex,crcVerified,dataType,asciiValue,validationStatus
+sim_autel_control_010_M001,0,syncWord,1,2,41410,A1C2,1,engineering_binary,"",CRC16_PASS
+sim_autel_control_010_M001,0,version,3,3,2,24,1,engineering_binary,"",CRC16_PASS
+sim_autel_control_010_M001,0,messageType,3,3,4,24,1,engineering_binary,"",CRC16_PASS
+sim_autel_control_010_M001,0,sequenceNumber,4,4,1,01,1,engineering_binary,"",CRC16_PASS
+sim_autel_control_010_M001,0,payloadLength,5,6,243,00F3,1,engineering_binary,"",CRC16_PASS
+sim_autel_control_010_M001,0,stateCode,7,7,0,00,1,engineering_binary,"",CRC16_PASS
+sim_autel_control_010_M001,0,deviceId,8,9,130,0082,1,engineering_binary,"",CRC16_PASS
+sim_autel_control_010_M001,0,timestampCounter,10,11,13002,32CA,1,engineering_binary,"",CRC16_PASS
+sim_autel_control_010_M001,0,payload,12,254,nan,C2000226AFE54651B009B639FA65CBC65A5A90E02C836D54BF783430475387705940EDAB3D23F15AF0F57AB9C66ADABAB0D9A7C535C5E24F88B704206DBEC4AA623A97B9BCE4EC602918EB92D8E1B93ECC14891D353D1C6D2DD92DD81331D653344A864755E893F43413F9E50A4B91F233426A82B124237C766350FD17A0F7EAADCF70DDD431E586FF912FB2BDB0772A9A11F998EA92FA37F53B7D47054119CA7DDA33432DD3603F4DD8311AF8DFDAC352CBDBA908177CB9BA71262D87F8A6D94E7E3DEEF14040E1B2338E59D7D536E7ABA3F28D4EE6B43A61BB2A98EBE2A7AC245CDBE04B20F8F1F24E4BE52BE3F1882C7EA4,1,engineering_binary,"",CRC16_PASS
+sim_autel_control_010_M001,0,payloadTag,12,12,194,C2,1,engineering_binary,"",CRC16_PASS
+sim_autel_control_010_M001,0,payloadState,13,13,0,00,1,engineering_binary,"",CRC16_PASS
+sim_autel_control_010_M001,0,payloadSequence,14,14,2,02,1,engineering_binary,"",CRC16_PASS
+sim_autel_control_010_M001,0,controlOctets,15,19,nan,26AFE54651,1,engineering_binary,"",CRC16_PASS
+sim_autel_control_010_M001,0,engineeringCrc16,255,256,9970,26F2,1,engineering_binary,"",CRC16_PASS

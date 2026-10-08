@@ -1,0 +1,2 @@
+candidate,source,index,protocol,start0,nfft,cp,active,CFOHz,rotation,bytesHex,byteCount,receivedCRC,computedCRC,originalCRCPresent,crcValid,semanticComplete,phyMode,byteSource,fieldCount,repetitionCombined,TxAdd,AdvA,messageType,rawBits,receivedCRCBits
+sim_unknown_uav_021_M003,sim_unknown_uav_021,0,Unknown_UAV_Link,25050,0,0,0,662867.52411517419,3.1415926535897931,7E7E2F0100340000E75A3E7E0200027D1B5ED5CAD6AD0BCB1A591FFF945DE5708EB932956AB754E57B4E13210874C1E04D570B7C42D2FD05D89B9188AB51B4FA9F,65,64159,64159,1,1,1,NOT_APPLICABLE,REAL_IQ,13,0,0,000000000000,0,,

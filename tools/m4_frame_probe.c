@@ -19,12 +19,15 @@ int main(int argc, char **argv)
     uint32_t count = 0U;
     uint16_t i;
     if (argc != 3) {
-        fprintf(stderr, "usage: m4_frame_probe wideband|droneid frameLength < CF32\n");
+        fprintf(stderr, "usage: m4_frame_probe wideband|droneid|autel-control|dji-control|unknown frameLength < CF32\n");
         return 2;
     }
     memset(&candidate, 0, sizeof(candidate));
     memset(&m3, 0, sizeof(m3));
     m3.profile = strcmp(argv[1], "droneid") == 0 ? WRJ_PROFILE_DRONEID_ZC :
+                 strcmp(argv[1], "autel-control") == 0 ? WRJ_PROFILE_AUTEL_CONTROL_CP :
+                 strcmp(argv[1], "dji-control") == 0 ? WRJ_PROFILE_DJI_CONTROL_BLIND :
+                 strcmp(argv[1], "unknown") == 0 ? WRJ_PROFILE_UNKNOWN :
                  WRJ_PROFILE_DJI_WIDEBAND_CP;
     m3.frame_length_samples = (uint32_t)strtoul(argv[2], NULL, 10);
     m3.num_frames = 1U;

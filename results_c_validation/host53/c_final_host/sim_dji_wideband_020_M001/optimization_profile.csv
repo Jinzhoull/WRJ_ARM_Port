@@ -1,0 +1,2 @@
+Candidate,M3FastMs,M4FastMs,DiagnoseMs,M3DeepMs,M4FastAfterSyncMs,M4DeepL1Ms,M4DeepL2Ms,M4DeepL3Ms,ProtocolRecoveryMs,GateMs,IOTimeMs,TotalRecoveryMs,FFTCalls,FFTCacheHits,TotalHypotheses,UniqueHypotheses,DuplicatesSkipped
+sim_dji_wideband_020_M001,6668,854,0,0,0,0,0,0,0,0,NaN,0,1580,0,8,8,0

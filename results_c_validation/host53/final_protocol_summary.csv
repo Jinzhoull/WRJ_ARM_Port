@@ -1,0 +1,8 @@
+protocol,candidates,generatedFrames,framesInsideCrop,recoveredPhysical,CRCRecords,fields,M4Fast,M4Final,M5Flow,strict,failureStages
+DJI Control,6,51,42,6,6,84,3,6,6,4,{}
+DJI Wideband,7,140,140,7,7,119,3,4,4,3,"{""BAD_SYNC"": 1, ""CRC_FAIL"": 2}"
+DJI DroneID,6,6,1,1,4,60,0,4,4,4,"{""BAD_SYNC"": 2}"
+Autel Control,3,14,11,4,4,56,3,3,3,3,{}
+Autel Wideband,7,126,126,5,5,85,2,3,3,3,"{""BAD_SYMBOLS"": 3, ""BAD_SYNC"": 1}"
+RemoteID,7,49,46,41,41,586,5,7,7,7,{}
+Unknown,17,138,96,22,22,283,12,16,16,16,"{""CRC_FAIL"": 1}"

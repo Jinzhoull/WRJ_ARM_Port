@@ -2,7 +2,7 @@
 set -euo pipefail
 
 project_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-build_dir="${PC_BUILD_DIR:-${project_root}/build-pc/linux}"
+build_dir="${PC_BUILD_DIR:-${project_root}/results_c_validation/final/build}"
 jobs="${JOBS:-$(getconf _NPROCESSORS_ONLN 2>/dev/null || echo 1)}"
 
 cmake -S "${project_root}" -B "${build_dir}" -DCMAKE_BUILD_TYPE=Release

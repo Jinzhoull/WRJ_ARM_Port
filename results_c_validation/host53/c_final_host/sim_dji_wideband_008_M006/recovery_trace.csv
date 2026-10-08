@@ -1,0 +1,9 @@
+candidate,step,state,result,details,CRCCount,seconds
+sim_dji_wideband_008_M006,0,FIRST_PASS_CHECK,FIRST_PASS_FAILED,"Independent received evidence gate",0,0
+sim_dji_wideband_008_M006,1,DIAGNOSE_FAILURE,DIAGNOSED,"CRC_FAIL",0,0
+sim_dji_wideband_008_M006,2,M4_CHEAP_PATH_ALREADY_EXECUTED,SKIP,"FAST compensated/raw cheap paths exhausted",0,0
+sim_dji_wideband_008_M006,3,M4_DEEP_RETRY,EXECUTE,"LEVEL_2_RECEIVED_PHY_SPECIALIST",0,0
+sim_dji_wideband_008_M006,4,REVALIDATE,GATE_FAIL,"Independent original CRC, semantics and candidate scope",0,1.078
+sim_dji_wideband_008_M006,5,M4_DEEP_RETRY,EXECUTE,"LEVEL_3_RECEIVED_PHY_SPECIALIST",0,1.078
+sim_dji_wideband_008_M006,6,REVALIDATE,GATE_FAIL,"Independent original CRC, semantics and candidate scope",0,222.077
+sim_dji_wideband_008_M006,7,TERMINAL_FAILED,FAIL,"BOUNDED_DEEP_EXHAUSTED",0,222.077

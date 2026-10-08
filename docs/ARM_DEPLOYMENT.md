@@ -1,32 +1,7 @@
-# ARMv7 Deployment Environment
+# ARM Phase7 入口
 
-## Target
+当前已通过 C99 Host 对 E34 MATLAB 的正式53候选验收；本轮未进行ARM交叉构建、部署或板端执行。历史板端产物已清理，不能把历史验证当作当前 E34 接收链的ARM验收。
 
-- Board: Xilinx Zynq, dual-core ARMv7 (`armv7l`)
-- ABI: ARM EABI5 hard-float, VFP register arguments; VFPv3/NEON available
-- OS: Linaro 14.04, Linux 4.14
-- RAM: approximately 497 MiB, no swap
-- SSH host alias: `analog-board`
-- Board root: `/root/wrj_arm_test`
+后续在有 ARMv7 hard-float 工具链的 Linux 主机运行 `tools/build_arm.sh`，使用 `cmake/armv7-linux-gnueabihf.cmake`，正式接收入口为 `wrj_c99_host`。先验证ABI/运行库、workspace内存、FFT/CFO精度与原CRC/字段一致性，再执行53候选数值/性能验收；不在板端读取 comparator-only Golden。
 
-默认主机和板端目录定义在 `tools/board_config.sh`，可通过 `BOARD_HOST`、`BOARD_ROOT` 环境变量覆盖。配置文件不含 SSH key、登录密码或 sudo 密码。
-
-## Build and compatibility
-
-Ubuntu host uses `arm-linux-gnueabihf-gcc` and `cmake/armv7-linux-gnueabihf.cmake`。当前经板端验证的程序为 ARMv7 hard-float、static、Release `-O2`，构建目录是 `build-arm/`。
-
-板端 EGLIBC 为 2.19。Ubuntu 动态链接版本要求 `GLIBC_2.27`/`GLIBC_2.29`，与目标板不兼容，因此当前部署使用静态链接。不要改为 AArch64，也不要在未重新验证兼容性的情况下更改 ABI 或编译参数。
-
-## Deploy / run flow
-
-```text
-Ubuntu tools/build_arm.sh
-        ↓
-tools/deploy_board.sh  →  /root/wrj_arm_test/bin/ + data/
-        ↓
-tools/run_board_test.sh → board results/ → local results/arm/
-```
-
-统一命令、单个 case 的上传/运行示例和结果位置见 [BUILD_AND_RUN.md](BUILD_AND_RUN.md)。运行脚本不会覆盖同名板端输出：默认输出名带时间戳，成功后复制 CSV 到本地 `results/arm/`，运行日志放在 `results/arm/logs/`。
-
-实机运行时间、RSS、ARM/PC 输出一致性及已知功能限制见 [ARM_VALIDATION.md](ARM_VALIDATION.md)。
+既有 board_config/deploy/run 脚本属于下一阶段需复核的部署工具；开始部署前需确认板端环境、目标二进制和运行参数。本轮未使用这些脚本，未宣称ARM实时性能。

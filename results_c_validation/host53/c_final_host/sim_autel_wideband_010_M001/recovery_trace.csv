@@ -1,0 +1,3 @@
+candidate,step,state,result,details,CRCCount,seconds
+sim_autel_wideband_010_M001,0,FIRST_PASS_CHECK,PASS,"Independent received evidence gate",2,0
+sim_autel_wideband_010_M001,1,SUCCESS,PASS,"FIRST_PASS_VALID",2,0

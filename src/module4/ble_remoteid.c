@@ -97,12 +97,8 @@ wrj_status_t m4_recover_remoteid(const wrj_cf32_t *iq, uint32_t count, float sam
     m4_ble_packet_t packets[WRJ_MAX_PACKETS];
     const uint32_t sps = WRJ_MAX(4U, (uint32_t)lroundf(sample_rate_hz / 1000000.0f));
     uint32_t frame, packet_count = 0U, attempts = 0U;
-    if (m3->crc_success_count == 0U) {
-        snprintf(result->diagnostics, sizeof(result->diagnostics), "upstream_crc_candidate_missing");
-        snprintf(result->crc_candidate_status, sizeof(result->crc_candidate_status), "no_valid_crc24_pdu");
-        result->status = M4_STATUS_CRC_FAILED;
-        return WRJ_ERR_DATA;
-    }
+    /* Module3's acquisition CRC count is evidence, not a gate: MATLAB M4
+     * independently re-reads aligned IQ even when the first receiver misses. */
     m4_ble_filter(iq, workspace->filtered, count, sps);
     for (frame = 0U; frame < m3->num_frames && packet_count < WRJ_MAX_PACKETS; ++frame) {
         const uint32_t center = m3->frame_start_samples_0based[frame];
@@ -130,6 +126,30 @@ wrj_status_t m4_recover_remoteid(const wrj_cf32_t *iq, uint32_t count, float sam
             }
         }
     }
+    /* MATLAB Module4 may consume the CRC-verified weak-signal PDUs acquired
+     * during Module3 receiver recovery. Recheck their CRC here, then merge
+     * by actual PDU bytes; a correlation peak alone is never promoted. */
+    for (frame = 0U; frame < m3->ble_verified_packet_count &&
+                    packet_count < WRJ_MAX_PACKETS; ++frame) {
+        uint8_t bits[312];
+        uint32_t bit, old;
+        const uint8_t *pdu = m3->ble_verified_pdu[frame];
+        m4_ble_packet_t decoded;
+        for (bit = 0U; bit < 312U; ++bit)
+            bits[bit] = (pdu[bit / 8U] >> (bit & 7U)) & 1U;
+        if (pdu[1] != 37U || m4_crc24_ble(bits, 312U) !=
+            m3->ble_verified_crc[frame]) continue;
+        for (old = 0U; old < packet_count; ++old)
+            if (memcmp(packets[old].pdu, pdu, 39U) == 0) break;
+        if (old != packet_count) continue;
+        memset(&decoded, 0, sizeof(decoded));
+        memcpy(decoded.pdu, pdu, 39U);
+        decoded.start_sample = m3->ble_verified_start[frame];
+        decoded.confidence = m3->ble_verified_confidence[frame];
+        memcpy(decoded.message, pdu + 14U, 25U);
+        decoded.message_type = decoded.message[0] >> 4U;
+        packets[packet_count++] = decoded;
+    }
     result->packet_count = (uint16_t)packet_count;
     result->crc_valid_count = (uint16_t)packet_count;
     result->crc_checked = 1U;
@@ -141,6 +161,8 @@ wrj_status_t m4_recover_remoteid(const wrj_cf32_t *iq, uint32_t count, float sam
              attempts, packet_count);
     for (frame = 0U; frame < packet_count; ++frame) {
         result->packet_lengths[frame] = 39U;
+        result->packet_source_start[frame] = packets[frame].start_sample;
+        result->packet_confidence[frame] = packets[frame].confidence;
         memcpy(result->packet_bytes[frame], packets[frame].pdu, 39U);
     }
     if (packet_count == 0U) {

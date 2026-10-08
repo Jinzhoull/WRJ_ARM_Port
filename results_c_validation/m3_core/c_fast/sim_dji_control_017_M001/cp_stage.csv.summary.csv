@@ -1,0 +1,2 @@
+candidate_count,separated_count,kept_count,selected_count,peak_threshold,coherence_threshold,final_fractional_cfo,nfft,cp,fs_hz
+4441,436,305,229,0.339308977127,0.381683140993,-9216.70138836,768,48,30720000

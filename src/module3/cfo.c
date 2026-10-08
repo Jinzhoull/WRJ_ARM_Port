@@ -61,7 +61,7 @@ static void m3_boxcar_same(const float *input, uint32_t count, uint32_t width, f
     }
 }
 
-static float m3_weighted_frequency_quantile(const float *weights, uint32_t count,
+static double m3_weighted_frequency_quantile(const float *weights, uint32_t count,
                                             uint32_t first_bin, uint32_t fft_size,
                                             float sample_rate_hz, float probability)
 {
@@ -77,16 +77,16 @@ static float m3_weighted_frequency_quantile(const float *weights, uint32_t count
     for (index = 0U; index < count; ++index) {
         cumulative += weights[index];
         if (cumulative >= probability * total) {
-            return ((float)(first_bin + index) - (float)(fft_size / 2U)) *
-                sample_rate_hz / (float)fft_size;
+            return ((double)(first_bin + index) - (double)(fft_size / 2U)) *
+                sample_rate_hz / (double)fft_size;
         }
     }
-    return ((float)(first_bin + count - 1U) - (float)(fft_size / 2U)) *
-        sample_rate_hz / (float)fft_size;
+    return ((double)(first_bin + count - 1U) - (double)(fft_size / 2U)) *
+        sample_rate_hz / (double)fft_size;
 }
 
 void m3_cfo_compensate(const wrj_cf32_t *input, wrj_cf32_t *output, uint32_t count,
-                       float sample_rate_hz, float correction_hz)
+                       double sample_rate_hz, double correction_hz)
 {
     uint32_t index;
     const double phase_step = -2.0 * WRJ_PI * (double)correction_hz / (double)sample_rate_hz;
@@ -100,12 +100,12 @@ void m3_cfo_compensate(const wrj_cf32_t *input, wrj_cf32_t *output, uint32_t cou
     M3_PERF_START(timer);
     for (index = 0U; index < count; ++index) {
         const double angle = phase_step * (double)index;
-        const float cr = (float)cos(angle);
-        const float ci = (float)sin(angle);
-        const float re = input[index].re;
-        const float im = input[index].im;
-        output[index].re = re * cr - im * ci;
-        output[index].im = re * ci + im * cr;
+        const double cr = cos(angle);
+        const double ci = sin(angle);
+        const double re = input[index].re;
+        const double im = input[index].im;
+        output[index].re = (float)(re * cr - im * ci);
+        output[index].im = (float)(re * ci + im * cr);
     }
     M3_PERF_STOP(M3_PERF_CFO_COMPENSATION, timer);
 }
@@ -159,7 +159,7 @@ wrj_status_t m3_bandlimit_fir(wrj_cf32_t *iq, uint32_t count, float sample_rate_
 
 wrj_status_t m3_estimate_spectral_center(const wrj_cf32_t *iq, uint32_t count,
                                          float sample_rate_hz, float bandwidth_hz,
-                                         m3_workspace_t *workspace, float *offset_hz)
+                                         m3_workspace_t *workspace, double *offset_hz)
 {
     const uint32_t fft_size = workspace == NULL ? 0U : workspace->spectrum_length;
     uint32_t available_blocks;
@@ -176,9 +176,9 @@ wrj_status_t m3_estimate_spectral_center(const wrj_cf32_t *iq, uint32_t count,
     float noise;
     float floor_level;
     float high_level;
-    float edge_center = NAN;
+    double edge_center = NAN;
     float edge_quality = 0.0f;
-    float symmetry_center = 0.0f;
+    double symmetry_center = 0.0;
     double best_run_score = -INFINITY;
     if (iq == NULL || workspace == NULL || offset_hz == NULL || count == 0U ||
         fft_size == 0U || sample_rate_hz <= 0.0f) {
@@ -274,8 +274,8 @@ wrj_status_t m3_estimate_spectral_center(const wrj_cf32_t *iq, uint32_t count,
     for (bin = 0U; bin < mask_count;) {
         uint32_t begin;
         uint32_t end;
-        float first_frequency;
-        float last_frequency;
+        double first_frequency;
+        double last_frequency;
         float width_hz;
         float center_hz;
         double run_excess = 0.0;
@@ -292,10 +292,10 @@ wrj_status_t m3_estimate_spectral_center(const wrj_cf32_t *iq, uint32_t count,
             ++bin;
         }
         end = bin - 1U;
-        first_frequency = ((float)(mask_first + begin) - (float)(fft_size / 2U)) * bin_hz;
-        last_frequency = ((float)(mask_first + end) - (float)(fft_size / 2U)) * bin_hz;
-        width_hz = last_frequency - first_frequency + bin_hz;
-        center_hz = 0.5f * (first_frequency + last_frequency);
+        first_frequency = ((double)(mask_first + begin) - (double)(fft_size / 2U)) * bin_hz;
+        last_frequency = ((double)(mask_first + end) - (double)(fft_size / 2U)) * bin_hz;
+        width_hz = (float)(last_frequency - first_frequency + bin_hz);
+        center_hz = (float)(0.5 * ((double)first_frequency + last_frequency));
         if (width_hz < WRJ_MAX(350000.0f, 0.12f * bandwidth_hz) ||
             width_hz > WRJ_MIN(1.8f * bandwidth_hz, 0.95f * sample_rate_hz) ||
             fabsf(center_hz) > center_search_half) {
@@ -311,17 +311,17 @@ wrj_status_t m3_estimate_spectral_center(const wrj_cf32_t *iq, uint32_t count,
         run_score = run_excess * width_penalty;
         if (run_score > best_run_score) {
             best_run_score = run_score;
-            edge_center = center_hz;
+            edge_center = 0.5 * ((double)first_frequency + last_frequency);
             edge_quality = wrj_clip01((float)((mean_power - floor_level) /
                 WRJ_MAX(high_level - floor_level, 1.0e-20f) * width_penalty));
         }
     }
     {
-        const float low = m3_weighted_frequency_quantile(workspace->spectrum_weight, mask_count,
+        const double low = m3_weighted_frequency_quantile(workspace->spectrum_weight, mask_count,
             mask_first, fft_size, sample_rate_hz, 0.05f);
-        const float high = m3_weighted_frequency_quantile(workspace->spectrum_weight, mask_count,
+        const double high = m3_weighted_frequency_quantile(workspace->spectrum_weight, mask_count,
             mask_first, fft_size, sample_rate_hz, 0.95f);
-        const float mid_edge = 0.5f * (low + high);
+        const double mid_edge = 0.5 * (low + high);
         if (!(isfinite(edge_center) && edge_quality >= 0.12f)) {
             const uint32_t convolution_length = m3_next_power_of_two(2U * mask_count - 1U);
             uint32_t low_index = 0U;
@@ -384,11 +384,11 @@ wrj_status_t m3_estimate_spectral_center(const wrj_cf32_t *iq, uint32_t count,
                         const double fraction = WRJ_CLAMP(0.5 * ((double)y1 - (double)y3) /
                                                           WRJ_MAX((double)denominator, 2.2204460492503131e-16),
                                                           -0.5, 0.5);
-                        symmetry_center += (float)(fraction * (double)bin_hz);
+                    symmetry_center += fraction * (double)bin_hz;
                     }
                 }
             }
-            *offset_hz = 0.85f * symmetry_center + 0.15f * mid_edge;
+            *offset_hz = 0.85 * symmetry_center + 0.15 * mid_edge;
         } else {
             *offset_hz = edge_center;
         }
@@ -402,9 +402,9 @@ wrj_status_t m3_estimate_spectral_center(const wrj_cf32_t *iq, uint32_t count,
         }
         if (kept > 0U) {
             float active_noise;
-            float active_low;
-            float active_high;
-            float active_center;
+            double active_low;
+            double active_high;
+            double active_center;
             for (bin = 0U; bin < mask_count; ++bin) {
                 double sum = 0.0;
                 for (block = 0U; block < block_count; ++block) {
@@ -423,8 +423,8 @@ wrj_status_t m3_estimate_spectral_center(const wrj_cf32_t *iq, uint32_t count,
                 mask_first, fft_size, sample_rate_hz, 0.04f);
             active_high = m3_weighted_frequency_quantile(workspace->spectrum_smooth, mask_count,
                 mask_first, fft_size, sample_rate_hz, 0.96f);
-            active_center = 0.5f * (active_low + active_high);
-            if (fabsf(active_center) > 1500000.0f && fabsf(active_center - *offset_hz) > 1000000.0f) {
+            active_center = 0.5 * (active_low + active_high);
+            if (fabs(active_center) > 1500000.0 && fabs(active_center - *offset_hz) > 1000000.0) {
                 *offset_hz = active_center;
             }
         }

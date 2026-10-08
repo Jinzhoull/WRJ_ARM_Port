@@ -1,0 +1,2 @@
+candidate,source,index,protocol,start0,nfft,cp,active,CFOHz,rotation,bytesHex,byteCount,receivedCRC,computedCRC,originalCRCPresent,crcValid,semanticComplete,phyMode,byteSource,fieldCount,repetitionCombined,TxAdd,AdvA,messageType,rawBits,receivedCRCBits
+sim_dji_control_022_M001,sim_dji_control_022,0,DJI_Control_Link,221488,512,64,96,3146357.4430625057,1.5707963267948966,D1C2210000320000341451C2000182AB006B3E6548AFBF6487B6720A1192833D873657ED8E7820EB55068104D9556D0F61DA42F4739538234F3798B99F2F2F,63,12079,12079,1,1,1,NOT_APPLICABLE,REAL_IQ,14,0,0,000000000000,0,,

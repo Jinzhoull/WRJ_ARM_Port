@@ -83,6 +83,12 @@ static float wrj_parse_float(const char *value)
     return strtof(value, &end);
 }
 
+static double wrj_parse_double(const char *value)
+{
+    if (value == NULL || value[0] == '\0') return 0.0;
+    return strtod(value, NULL);
+}
+
 wrj_status_t wrj_load_handoff_candidate(const char *csv_path, const char *candidate_id,
                                         wrj_candidate_t *candidate)
 {
@@ -96,6 +102,8 @@ wrj_status_t wrj_load_handoff_candidate(const char *csv_path, const char *candid
     int link_col;
     int protocol_col;
     int fs_col;
+    int start_col;
+    int end_col;
     int fc_col;
     int offset_col;
     int bandwidth_col;
@@ -124,6 +132,8 @@ wrj_status_t wrj_load_handoff_candidate(const char *csv_path, const char *candid
     link_col = wrj_column_index(headers, header_count, "predictedLinkType");
     protocol_col = wrj_column_index(headers, header_count, "predictedProtocolFamily");
     fs_col = wrj_column_index(headers, header_count, "sampleRateHz");
+    start_col = wrj_column_index(headers, header_count, "candidateStartSec");
+    end_col = wrj_column_index(headers, header_count, "candidateEndSec");
     fc_col = wrj_column_index(headers, header_count, "centerFrequencyHz");
     offset_col = wrj_column_index(headers, header_count, "candidateCenterOffsetHz");
     bandwidth_col = wrj_column_index(headers, header_count, "bandwidthHz");
@@ -157,6 +167,10 @@ wrj_status_t wrj_load_handoff_candidate(const char *csv_path, const char *candid
         WRJ_COPY_FIELD(parser_template_id, parser_col);
         WRJ_COPY_FIELD(candidate_iq_artifact, artifact_col);
         WRJ_NUMBER_FIELD(sample_rate_hz, fs_col);
+        if (start_col >= 0 && start_col < count)
+            candidate->candidate_start_sec = wrj_parse_double(fields[start_col]);
+        if (end_col >= 0 && end_col < count)
+            candidate->candidate_end_sec = wrj_parse_double(fields[end_col]);
         WRJ_NUMBER_FIELD(center_frequency_hz, fc_col);
         WRJ_NUMBER_FIELD(candidate_center_offset_hz, offset_col);
         WRJ_NUMBER_FIELD(bandwidth_hz, bandwidth_col);
@@ -193,8 +207,20 @@ wrj_status_t wrj_read_cf32(const char *path, wrj_cf32_t *samples, uint32_t capac
         ++index;
     }
     if (!feof(file) && index == capacity) {
-        fclose(file);
-        return WRJ_ERR_CAPACITY;
+        /* Filling exactly the caller's capacity is valid. feof is only set
+         * after a read past EOF; peek without accepting a truncated input. */
+        if (fgetc(file) != EOF) {
+            fclose(file);
+            return WRJ_ERR_CAPACITY;
+        }
+    }
+    if (ferror(file)) { fclose(file); return WRJ_ERR_IO; }
+    {
+        const long position = ftell(file);
+        if (position < 0 || (unsigned long)position % (2U * sizeof(float)) != 0U) {
+            fclose(file);
+            return WRJ_ERR_DATA;
+        }
     }
     fclose(file);
     *count = index;
@@ -209,6 +235,68 @@ wrj_status_t wrj_make_directory(const char *path)
     if (WRJ_MKDIR(path) != 0 && errno != EEXIST) {
         return WRJ_ERR_IO;
     }
+    return WRJ_OK;
+}
+
+wrj_status_t wrj_write_m4_handoff_csv(const char *output_dir,
+                                     const m4_to_m5_handoff_t *handoff)
+{
+    char path[WRJ_PATH_CAPACITY];
+    FILE *file;
+    uint16_t index;
+    if (output_dir == NULL || handoff == NULL) return WRJ_ERR_ARGUMENT;
+    snprintf(path, sizeof(path), "%s/module4_to_module5_handoff.csv", output_dir);
+    file = fopen(path, "wb");
+    if (file == NULL) return WRJ_ERR_IO;
+    fprintf(file, "candidateId,sourceFile,candidateStartSec,candidateEndSec,"
+                  "protocol,m3Status,m4Status,realIqOnly,"
+                  "syncConfidence,cfoHz,syncedFrameCount,parseComplete,fieldCount,"
+                  "crcValidCount,uasId,operatorId,latitudeDeg,longitudeDeg,altitudeM,"
+                  "speedMps,headingDeg,packetIndex,packetKind,frameIndex,sourceStart,"
+                  "observationTimeSec,payloadLength,crcType,crcChecked,crcValid,"
+                  "messageType,sequenceNumber,polarityInverted,packetConfidence,"
+                  "deviceAddress,payloadHex\n");
+    for (index = 0U; index < WRJ_MAX(1U, handoff->packet_count); ++index) {
+        const m4_m5_packet_t *packet = index < handoff->packet_count ?
+            &handoff->packets[index] : NULL;
+        const char *kind = packet == NULL ? "NONE" :
+            packet->kind == M4_M5_BLE_PDU ? "BLE_PDU" :
+            packet->kind == M4_M5_LOGICAL_FRAME ? "LOGICAL_FRAME" : "SYMBOL_OBSERVATION";
+        const char *crc = packet == NULL ? "NONE" :
+            packet->crc_kind == M4_M5_CRC24_BLE ? "CRC24_BLE" :
+            packet->crc_kind == M4_M5_CRC16_CCITT ? "CRC16_CCITT" : "NONE";
+        uint16_t byte;
+        fprintf(file, "%s,%s,%.9f,%.9f,%s,%s,%s,%u,%.6f,%.6f,%u,%u,%u,%u,%s,%s,"
+                      "%.8f,%.8f,%.3f,%.3f,%.3f,%u,%s,%u,%u,%.9f,%u,%s,%u,%u,%d,%d,%u,%.6f,",
+                handoff->candidate_id, handoff->source_file,
+                handoff->candidate_start_sec, handoff->candidate_end_sec,
+                handoff->protocol,
+                handoff->m3_status, handoff->m4_status, handoff->real_iq_only,
+                handoff->sync_confidence, handoff->cfo_hz, handoff->synced_frame_count,
+                handoff->parse_complete, handoff->field_count, handoff->crc_valid_count,
+                handoff->uas_id, handoff->operator_id, handoff->latitude_deg,
+                handoff->longitude_deg, handoff->altitude_m, handoff->speed_mps,
+                handoff->heading_deg, packet == NULL ? 0U : index + 1U, kind,
+                packet == NULL ? 0U : packet->frame_index,
+                packet == NULL ? 0U : packet->start_sample,
+                packet == NULL ? NAN : packet->observation_time_sec,
+                packet == NULL ? 0U : packet->byte_count, crc,
+                packet == NULL ? 0U : packet->crc_checked,
+                packet == NULL ? 0U : packet->crc_valid,
+                packet == NULL ? -1 : packet->message_type,
+                packet == NULL ? -1 : packet->sequence_number,
+                packet == NULL ? 0U : packet->polarity_inverted,
+                packet == NULL ? 0.0 : (double)packet->confidence);
+        if (packet != NULL && packet->device_address_valid != 0U)
+            for (byte = 0U; byte < 6U; ++byte)
+                fprintf(file, "%02X", packet->device_address[byte]);
+        fputc(',', file);
+        if (packet != NULL)
+            for (byte = 0U; byte < packet->byte_count; ++byte)
+                fprintf(file, "%02X", packet->bytes[byte]);
+        fputc('\n', file);
+    }
+    fclose(file);
     return WRJ_OK;
 }
 
@@ -352,5 +440,68 @@ wrj_status_t wrj_write_results(const char *output_dir, const wrj_candidate_t *ca
         fprintf(file, "%s,%u,%02X,%.6f,REAL_IQ\n", candidate->candidate_id,
                 index, m4_result->bytes[index], m4_result->byte_confidence[index]);
     fclose(file);
+
+    if (m4_result->dji_wideband.attempted != 0U) {
+        const m4_dji_wideband_parse_t *parsed = &m4_result->dji_wideband;
+        snprintf(path, sizeof(path), "%s/module4_dji_wideband_parse.csv", output_dir);
+        file = fopen(path, "wb");
+        if (file == NULL) return WRJ_ERR_IO;
+        fprintf(file, "candidateId,protocol,frameId,deviceId,latitude,longitude,altitude,"
+                      "velocity,heading,timestamp,timestampCounter,messageType,stateCode,"
+                      "payloadLength,sourceObservation,byteOffset,polarityInverted,"
+                      "observationCount,maxObservationBytes,headerCandidates,completeCandidates,"
+                      "crcValidCount,parseStatus,module4Status,observation_count,"
+                      "assembled_byte_count,start_observation,end_observation,assembly_method,polarity_mode,header_candidates,"
+                      "complete_frame_candidates,crc16_checked,crc16_passed,continuity_status\n");
+        if (parsed->complete != 0U) {
+            fprintf(file, "%s,DJI_OCUSYNC_PROXY_WIDEBAND_V2,%u,%u,unknown,unknown,unknown,"
+                          "unknown,unknown,unknown,%u,%u,%u,%u,%u,%u,%u,%u,%u,%u,%u,%u,%s,%s,",
+                    candidate->candidate_id, parsed->frame_id, parsed->device_id,
+                    parsed->timestamp_counter, parsed->message_type, parsed->state_code,
+                    parsed->payload_length, parsed->source_observation, parsed->byte_offset,
+                    parsed->polarity_inverted, parsed->observation_count,
+                    parsed->max_observation_bytes, parsed->header_candidates,
+                    parsed->complete_candidates, parsed->crc_valid_count,
+                    parsed->status, wrj_m4_status_name(m4_result->status));
+            fprintf(file, "%u,%u,%u,%u,%s,%s,%u,%u,%u,%u,%u\n",
+                    parsed->observation_count, parsed->assembled_byte_count,
+                    parsed->assembly_start_observation, parsed->assembly_end_observation,
+                    parsed->assembly_method, parsed->polarity_mode,
+                    parsed->header_candidates, parsed->complete_candidates,
+                    parsed->crc16_checked, parsed->crc16_passed,
+                    parsed->assembly_continuous);
+        } else {
+            fprintf(file, "%s,unknown,unknown,unknown,unknown,unknown,unknown,"
+                          "unknown,unknown,unknown,unknown,unknown,unknown,unknown,"
+                          "unknown,unknown,unknown,%u,%u,%u,%u,%u,%s,%s,",
+                    candidate->candidate_id, parsed->observation_count,
+                    parsed->max_observation_bytes, parsed->header_candidates,
+                    parsed->complete_candidates, parsed->crc_valid_count,
+                    parsed->status, wrj_m4_status_name(m4_result->status));
+            fprintf(file, "%u,%u,%u,%u,%s,%s,%u,%u,%u,%u,%u\n",
+                    parsed->observation_count, parsed->assembled_byte_count,
+                    parsed->assembly_start_observation, parsed->assembly_end_observation,
+                    parsed->assembly_method, parsed->polarity_mode,
+                    parsed->header_candidates, parsed->complete_candidates,
+                    parsed->crc16_checked, parsed->crc16_passed,
+                    parsed->assembly_continuous);
+        }
+        fclose(file);
+        snprintf(path, sizeof(path), "%s/module4_dji_wideband_assembly.csv", output_dir);
+        file = fopen(path, "wb");
+        if (file == NULL) return WRJ_ERR_IO;
+        fprintf(file, "candidate_id,observation_index,source_start,byte_count,polarity,confidence,assembled_offset,full_symbol\n");
+        for (index = 0U; index < m4_result->packet_count; ++index) {
+            const uint32_t offset = parsed->assembly_offsets[index];
+            fprintf(file, "%s,%u,%u,%u,unresolved,%.6f,",
+                    candidate->candidate_id, index + 1U,
+                    m4_result->packet_source_start[index], m4_result->packet_lengths[index],
+                    m4_result->packet_confidence[index]);
+            if (offset == UINT32_MAX) fprintf(file, "-1");
+            else fprintf(file, "%u", offset);
+            fprintf(file, ",%u\n", m4_result->packet_full_symbol[index]);
+        }
+        fclose(file);
+    }
     return WRJ_OK;
 }

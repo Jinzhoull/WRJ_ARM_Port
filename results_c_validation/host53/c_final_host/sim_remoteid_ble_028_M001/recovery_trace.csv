@@ -1,0 +1,9 @@
+candidate,step,state,result,details,CRCCount,seconds
+sim_remoteid_ble_028_M001,0,FIRST_PASS_CHECK,FIRST_PASS_FAILED,"Independent received evidence gate",0,0
+sim_remoteid_ble_028_M001,1,DIAGNOSE_FAILURE,DIAGNOSED,"SEMANTIC_FAIL",0,0
+sim_remoteid_ble_028_M001,2,PROTOCOL_RECOVERY,EXECUTE,"Bounded received PDU association",0,0
+sim_remoteid_ble_028_M001,3,M3_DEEP_RETRY,EXECUTE,"BLE actual AA/CFO/filter bank",0,0
+sim_remoteid_ble_028_M001,4,M4_FAST_AFTER_M3_RETRY,EXECUTE,"Actual IQ with original CRC",0,41.781
+sim_remoteid_ble_028_M001,5,REVALIDATE,PASS,"Independent original CRC, semantics and candidate scope",5,41.781
+sim_remoteid_ble_028_M001,6,REMOTEID_MESSAGE_COMPLETION,BUDGETED,"Original CRC and unchanged received identity",5,41.781
+sim_remoteid_ble_028_M001,7,SUCCESS,PASS,"ORIGINAL_CRC_AND_INDEPENDENT_GATE",5,41.781

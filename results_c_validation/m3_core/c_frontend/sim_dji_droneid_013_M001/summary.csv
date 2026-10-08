@@ -1,0 +1,2 @@
+candidate,status,syncAccepted,profile,CFOHz,SfoPpm,frameCount,frameLength,runtimeSeconds,implementationStage,goldenVersion,portVersion,sourceFingerprint
+sim_dji_droneid_013_M001,,0,,0,0,0,0,0.073,E34_FAST_DEEP_RECEIVED_IQ,E34_M3V22_M4V18_M5V11,E34_C_PORT_V1,415733f945962206e5224f8f95ce8feb99a866b063c96608ac1bfe036a348ad6

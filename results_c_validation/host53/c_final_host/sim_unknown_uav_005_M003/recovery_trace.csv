@@ -1,0 +1,3 @@
+candidate,step,state,result,details,CRCCount,seconds
+sim_unknown_uav_005_M003,0,FIRST_PASS_CHECK,PASS,"Independent received evidence gate",2,0
+sim_unknown_uav_005_M003,1,SUCCESS,PASS,"FIRST_PASS_VALID",2,0

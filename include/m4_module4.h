@@ -47,6 +47,10 @@ wrj_status_t m4_recover_remoteid(const wrj_cf32_t *iq, uint32_t count, float sam
                                  const m3_result_t *m3, m4_workspace_t *workspace,
                                  m4_result_t *result);
 void m4_parse_structural_fields(m4_result_t *result);
+void m4_parse_dji_wideband_proxy(const wrj_candidate_t *candidate,
+                                 const m3_result_t *m3, m4_result_t *result);
+int m4_decode_dji_wideband_proxy_frame(const uint8_t *bytes, size_t count,
+                                       m4_dji_wideband_parse_t *parsed);
 void m4_parse_remoteid_messages(const m4_ble_packet_t *packets, uint32_t count,
                                 m4_result_t *result);
 uint32_t m4_crc24_ble(const uint8_t *bits, uint32_t bit_count);

@@ -1,0 +1,2 @@
+Candidate,M3FastMs,M4FastMs,DiagnoseMs,M3DeepMs,M4FastAfterSyncMs,M4DeepL1Ms,M4DeepL2Ms,M4DeepL3Ms,ProtocolRecoveryMs,GateMs,IOTimeMs,TotalRecoveryMs,FFTCalls,FFTCacheHits,TotalHypotheses,UniqueHypotheses,DuplicatesSkipped
+sim_dji_control_030_M002,2540,6037,0,0,0,0,158,685,0,0,NaN,843,3149,292,490,490,0

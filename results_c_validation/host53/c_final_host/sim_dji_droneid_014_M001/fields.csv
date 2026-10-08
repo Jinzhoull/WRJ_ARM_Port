@@ -1,0 +1,16 @@
+candidate,record,semantic,startByte,endByte,numericValue,rawHex,crcVerified,dataType,asciiValue,validationStatus
+sim_dji_droneid_014_M001,0,syncWord,1,2,53517,D10D,1,engineering_binary,"",CRC16_PASS
+sim_dji_droneid_014_M001,0,version,3,3,2,23,1,engineering_binary,"",CRC16_PASS
+sim_dji_droneid_014_M001,0,messageType,3,3,3,23,1,engineering_binary,"",CRC16_PASS
+sim_dji_droneid_014_M001,0,sequenceNumber,4,4,0,00,1,engineering_binary,"",CRC16_PASS
+sim_dji_droneid_014_M001,0,payloadLength,5,6,115,0073,1,engineering_binary,"",CRC16_PASS
+sim_dji_droneid_014_M001,0,stateCode,7,7,0,00,1,engineering_binary,"",CRC16_PASS
+sim_dji_droneid_014_M001,0,deviceId,8,9,104,0068,1,engineering_binary,"",CRC16_PASS
+sim_dji_droneid_014_M001,0,timestampCounter,10,11,10401,28A1,1,engineering_binary,"",CRC16_PASS
+sim_dji_droneid_014_M001,0,payload,12,126,nan,D101FFFFFFFF942A831E9B74DBDE89E0103BE99F44506BF54DF917FCEBC4389C477E52CECD27C57C416FFB2823BF195B54CECA87F3F956E253469E00A00FBA4C932BDB17242C1B3F0F08D02F34255B58A62ECE1A1122A1343DA50746B71E77D1E31F9BCE2E5E8384894797ACC7DE7DDF9D2A67,1,engineering_binary,"",CRC16_PASS
+sim_dji_droneid_014_M001,0,payloadTag,12,12,209,D1,1,engineering_binary,"",CRC16_PASS
+sim_dji_droneid_014_M001,0,payloadSequence,13,13,1,01,1,engineering_binary,"",CRC16_PASS
+sim_dji_droneid_014_M001,0,latitudeDeg,14,15,37.5535,FFFF,1,engineering_binary,"",CRC16_PASS
+sim_dji_droneid_014_M001,0,longitudeDeg,16,17,127.5535,FFFF,1,engineering_binary,"",CRC16_PASS
+sim_dji_droneid_014_M001,0,identityOctets,18,21,nan,942A831E,1,engineering_binary,"",CRC16_PASS
+sim_dji_droneid_014_M001,0,engineeringCrc16,127,128,2831,0B0F,1,engineering_binary,"",CRC16_PASS
